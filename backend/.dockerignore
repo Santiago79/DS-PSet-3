@@ -1,0 +1,20 @@
+# Git
+.git/
+.gitignore
+
+# Entornos virtuales
+venv/
+env/
+.venv/
+
+# Archivos compilados de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Variables de entorno
+.env
+
+# IDEs y otros
+.vscode/
+README.md
