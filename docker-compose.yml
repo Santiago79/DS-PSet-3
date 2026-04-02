@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: opscenter_db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: opscenter
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ./backend
+    container_name: opscenter_api
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      # URL de conexión para que SQLAlchemy se conecte a la db
+      DATABASE_URL: postgresql://admin:password@db:5432/opscenter
+    volumes:
+      - ./backend:/app
+
+  ui:
+    build:
+      context: ./frontend
+    container_name: opscenter_ui
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
+    volumes:
+      - ./frontend:/app
+
+volumes:
+  postgres_data:
