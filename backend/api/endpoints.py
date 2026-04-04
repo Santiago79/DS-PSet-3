@@ -5,7 +5,9 @@ from infrastructure.database import get_db
 from infrastructure.models import UserORM
 from infrastructure.auth_provider import AuthProvider
 from domain.entities import User
+from domain.enums import Role
 from api.dependencies import get_current_user
+from api.guards import require_role
 
 # Importamos los nuevos DTOs de Application
 from application.dtos import UserResponseDTO, LoginRequestDTO, LoginResponseDTO
