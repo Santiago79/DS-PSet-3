@@ -1,22 +1,30 @@
-from fastapi import HTTPException, status, Depends
+from fastapi import Depends, HTTPException, status
 from domain.entities import User
 from domain.enums import Role
 from api.dependencies import get_current_user
 
-class RoleChecker:
-    def __init__(self, allowed_roles: list[Role]):
-        self.allowed_roles = allowed_roles
-
-    def __call__(self, user: User = Depends(get_current_user)) -> User:
-        if user.role not in self.allowed_roles:
-            roles_str = [r.value for r in self.allowed_roles]
+def require_role(required_role: Role):
+    """
+    Dependencia de FastAPI que verifica si el usuario autenticado tiene el rol necesario.
+    Implementa una jerarquía: ADMIN tiene acceso a todo, SUPERVISOR a lo suyo y lo de OPERATOR.
+    """
+    def role_checker(current_user: User = Depends(get_current_user)) -> User:
+        # Definimos la jerarquía de permisos
+        hierarchy = {
+            Role.ADMIN: [Role.ADMIN, Role.SUPERVISOR, Role.OPERATOR],
+            Role.SUPERVISOR: [Role.SUPERVISOR, Role.OPERATOR],
+            Role.OPERATOR: [Role.OPERATOR]
+        }
+        
+        # Obtenemos los roles permitidos para el nivel requerido
+        allowed_roles = hierarchy.get(required_role, [])
+        
+        if current_user.role not in allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Acceso denegado. Se requiere uno de estos roles: {roles_str}"
+                detail=f"Acceso denegado. Se requiere el nivel de acceso: {required_role.value}"
             )
-        return user
+        
+        return current_user
 
-# Definición de dependencias
-is_admin = RoleChecker([Role.ADMIN])
-is_supervisor_or_admin = RoleChecker([Role.ADMIN, Role.SUPERVISOR])
-is_any_role = RoleChecker([Role.ADMIN, Role.SUPERVISOR, Role.OPERATOR])
+    return role_checker
