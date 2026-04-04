@@ -1,42 +1,44 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+
 from infrastructure.database import get_db
 from infrastructure.models import UserORM
 from infrastructure.auth_provider import AuthProvider
 from domain.entities import User
 from api.dependencies import get_current_user
 
+# Importamos los nuevos DTOs de Application
+from application.dtos import UserResponseDTO, LoginRequestDTO, LoginResponseDTO
+
 router = APIRouter()
 
-@router.post("/login", summary="Autenticar usuario")
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+@router.post("/login", response_model=LoginResponseDTO, summary="Autenticar usuario")
+def login(body: LoginRequestDTO, db: Session = Depends(get_db)):
     """
-    Autentica al usuario y devuelve un token JWT.
+    Usa el DTO para recibir email/password y retorna el token.
+    """
+    user_orm = db.query(UserORM).filter(UserORM.email == body.email).first()
     
-    **Nota:** Por convención del estándar OAuth2, el campo se llama `username`, 
-    pero debes enviar el **email** del usuario.
-    """
-    user_orm = db.query(UserORM).filter(UserORM.email == form_data.username).first()
-    if not user_orm or not AuthProvider.verify_password(form_data.password, user_orm.hashed_password):
+    if not user_orm or not AuthProvider.verify_password(body.password, user_orm.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email o contraseña incorrectos",
+            detail="Credenciales inválidas"
         )
     
     access_token = AuthProvider.create_access_token(
         data={"sub": user_orm.email, "role": user_orm.role}
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    
+    return LoginResponseDTO(access_token=access_token)
 
-@router.get("/me", summary="Obtener perfil de usuario")
+@router.get("/me", response_model=UserResponseDTO, summary="Mi perfil")
 def get_me(current_user: User = Depends(get_current_user)):
     """
-    Retorna los datos del usuario actualmente autenticado (Entidad del dominio).
+    Mapea la entidad de dominio al DTO de respuesta.
     """
-    return {
-        "id": current_user.id,
-        "name": current_user.name,
-        "email": current_user.email,
-        "role": current_user.role.value
-    }
+    return UserResponseDTO(
+        id=current_user.id,
+        name=current_user.name,
+        email=current_user.email,
+        role=current_user.role.value
+    )
