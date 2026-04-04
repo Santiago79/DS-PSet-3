@@ -1,16 +1,52 @@
+"""Conexión a base de datos para la API. Usa DATABASE_URL (PostgreSQL en Docker) o SQLite por defecto."""
 import os
+from contextlib import contextmanager
+from typing import Generator
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker, Session
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://admin:password@db:5432/opscenter")
+from infrastructure.models import Base
 
-engine = create_engine(DATABASE_URL)
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "sqlite:///./opscenter.db"
+)
+
+connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+
+engine = create_engine(
+    DATABASE_URL,
+    connect_args=connect_args,
+    echo=os.getenv("SQL_ECHO", "0") == "1",
+)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
 
-def get_db():
-    db = SessionLocal()
+
+def init_db() -> None:
+    """Crea las tablas si no existen."""
+    Base.metadata.create_all(bind=engine)
+
+
+@contextmanager
+def get_session() -> Generator[Session, None, None]:
+    """Context manager para obtener una sesión (uso en scripts o tests)."""
+    session = SessionLocal()
     try:
-        yield db
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
     finally:
-        db.close()
+        session.close()
+
+
+def get_db() -> Generator[Session, None, None]:
+    """Dependency de FastAPI: yield una sesión por request."""
+    session = SessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()

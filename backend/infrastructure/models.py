@@ -1,71 +1,80 @@
+from __future__ import annotations
+from typing import Optional, List
+from sqlalchemy import String, ForeignKey, Text, DateTime
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime
-from sqlalchemy.orm import relationship
-from infrastructure.database import Base
+
+class Base(DeclarativeBase):
+    pass
 
 class UserORM(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(Integer, nullable=False) # cite: 66
-    email = Column(String, unique=True, index=True, nullable=False) # cite: 67
-    hashed_password = Column(String, nullable=False) # cite: 68
-    role = Column(String, nullable=False) # ADMIN, SUPERVISOR, OPERATOR [cite: 50-54, 69]
+    # Fix 2 & 4: id como String y usando Mapped/mapped_column
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    
+    # Fix 1 & 4: name como String y Mapped
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    hashed_password: Mapped[str] = mapped_column(String, nullable=False)
+    role: Mapped[str] = mapped_column(String(50), nullable=False)
 
-    # Relaciones para trazabilidad (como en el PSet 2)
-    incidents_created = relationship("IncidentORM", foreign_keys="[IncidentORM.created_by]", back_populates="creator")
-    incidents_assigned = relationship("IncidentORM", foreign_keys="[IncidentORM.assigned_to]", back_populates="assignee")
-    tasks_assigned = relationship("TaskORM", back_populates="assignee")
+    # Relaciones usando strings para evitar el NameError
+    incidents_created: Mapped[List[IncidentORM]] = relationship(
+        "IncidentORM", foreign_keys="[IncidentORM.created_by]", back_populates="creator"
+    )
+    incidents_assigned: Mapped[List[IncidentORM]] = relationship(
+        "IncidentORM", foreign_keys="[IncidentORM.assigned_to]", back_populates="assignee"
+    )
+    tasks_assigned: Mapped[List[TaskORM]] = relationship("TaskORM", back_populates="assignee")
 
 class IncidentORM(Base):
     __tablename__ = "incidents"
 
-    id = Column(Integer, primary_key=True, index=True) # cite: 73
-    title = Column(String, nullable=False) # cite: 75
-    description = Column(Text, nullable=False) # cite: 76
-    severity = Column(String, nullable=False) # cite: 77
-    status = Column(String, default="OPEN") # cite: 78, 115
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    severity: Mapped[str] = mapped_column(String(50), nullable=False)
+    status: Mapped[str] = mapped_column(String(50), default="OPEN")
     
-    created_by = Column(Integer, ForeignKey("users.id"), nullable=False) # cite: 79
-    assigned_to = Column(Integer, ForeignKey("users.id"), nullable=True) # cite: 80
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    assigned_to: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
     
-    created_at = Column(DateTime, default=datetime.utcnow) # cite: 82
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Relaciones
-    creator = relationship("UserORM", foreign_keys=[created_by], back_populates="incidents_created")
-    assignee = relationship("UserORM", foreign_keys=[assigned_to], back_populates="incidents_assigned")
-    tasks = relationship("TaskORM", back_populates="incident", cascade="all, delete-orphan")
+    # Fix 3: Relaciones con los foreign_keys corregidos
+    creator: Mapped[UserORM] = relationship("UserORM", foreign_keys=[created_by], back_populates="incidents_created")
+    assignee: Mapped[Optional[UserORM]] = relationship("UserORM", foreign_keys=[assigned_to], back_populates="incidents_assigned")
+    tasks: Mapped[List[TaskORM]] = relationship("TaskORM", back_populates="incident", cascade="all, delete-orphan")
 
 class TaskORM(Base):
     __tablename__ = "tasks"
 
-    id = Column(Integer, primary_key=True, index=True) # cite: 84
-    incident_id = Column(Integer, ForeignKey("incidents.id"), nullable=False) # cite: 85
-    title = Column(String, nullable=False) # cite: 86
-    description = Column(Text, nullable=False) # cite: 87
-    status = Column(String, default="OPEN") # cite: 88, 148
-    assigned_to = Column(Integer, ForeignKey("users.id"), nullable=True) # cite: 89
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    incident_id: Mapped[str] = mapped_column(ForeignKey("incidents.id"), nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(50), default="OPEN")
+    assigned_to: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
     
-    created_at = Column(DateTime, default=datetime.utcnow) # cite: 90
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Relaciones
-    incident = relationship("IncidentORM", back_populates="tasks")
-    assignee = relationship("UserORM", back_populates="tasks_assigned")
+    incident: Mapped[IncidentORM] = relationship("IncidentORM", back_populates="tasks")
+    assignee: Mapped[Optional[UserORM]] = relationship("UserORM", back_populates="tasks_assigned")
 
 class NotificationORM(Base):
     __tablename__ = "notifications"
 
-    id = Column(Integer, primary_key=True, index=True) # cite: 93
-    recipient = Column(Integer, ForeignKey("users.id"), nullable=False) # cite: 94
-    channel = Column(String, nullable=False) # cite: 95
-    message = Column(Text, nullable=False) # cite: 96
-    event_type = Column(String, nullable=False) # cite: 97
-    status = Column(String, default="PENDING") # cite: 98
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    recipient: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    channel: Mapped[str] = mapped_column(String(50), nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    event_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    status: Mapped[str] = mapped_column(String(50), default="PENDING")
     
-    created_at = Column(DateTime, default=datetime.utcnow) # cite: 99
-    read_at = Column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    read_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
-    # Relación simple con el usuario receptor
-    user = relationship("UserORM")
+    user: Mapped[UserORM] = relationship("UserORM")
