@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 import datetime
 from typing import Optional
 from backend.domain.exceptions import InvalidStateTransitionError, ValidationError
+from backend.domain.states import IncidentState
 from domain.enums import IncidentStatus, Role, Severity, TaskStatus
 from uuid import uuid4
 
@@ -24,6 +25,7 @@ class User:
 class Incident:
     """
     Entidad Incident - Corazón del sistema OpsCenter.
+    Usa State Pattern para manejar su ciclo de vida.
     """
     title: str
     description: str
@@ -34,6 +36,7 @@ class Incident:
     assigned_to: Optional[str] = None
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
+    _state: Optional[IncidentState] = field(default=None, init=False, repr=False)
 
     def __post_init__(self) -> None:
         if not self.title or len(self.title.strip()) < 3:
@@ -50,47 +53,59 @@ class Incident:
         """Retorna el estado actual del incidente"""
         return self._status
 
+    @property
+    def state(self) -> IncidentState:
+        """
+        Retorna el objeto State actual (lazy loading).
+        El estado se crea según el valor de _status.
+        """
+        if self._state is None:
+            from domain.states import create_state_from_status
+            self._state = create_state_from_status(self._status, self)
+        return self._state
+
     def assign_to(self, user_id: str) -> None:
         """
         Asigna el incidente a un usuario.
-        Solo se puede asignar si el incidente está OPEN.
+        Delega en el estado actual la lógica de asignación.
         """
-        if self._status != IncidentStatus.OPEN:
-            raise InvalidStateTransitionError(
-                f"No se puede asignar un incidente en estado {self._status.value}"
-            )
-        self.assigned_to = user_id
-        self._status = IncidentStatus.ASSIGNED
+        self.state.assign(self, user_id)
         self.updated_at = datetime.utcnow()
 
-    def change_status(self, new_status: IncidentStatus) -> None:
+    def start_progress(self) -> None:
+        """Marca el incidente como en progreso"""
+        self.state.start_progress(self)
+        self.updated_at = datetime.utcnow()
+
+    def resolve(self) -> None:
+        """Resuelve el incidente"""
+        self.state.resolve(self)
+        self.updated_at = datetime.utcnow()
+
+    def close(self) -> None:
+        """Cierra el incidente"""
+        self.state.close(self)
+        self.updated_at = datetime.utcnow()
+
+    def reopen(self) -> None:
+        """Reabre el incidente"""
+        self.state.reopen(self)
+        self.updated_at = datetime.utcnow()
+
+    def _transition_to(self, new_status: IncidentStatus) -> None:
         """
-        Cambia el estado del incidente validando las transiciones permitidas.
+        Método interno llamado por los estados para cambiar el estado.
+        No debe ser llamado directamente desde fuera.
         """
-        # Definir transiciones válidas
-        allowed_transitions = {
-            IncidentStatus.OPEN: [IncidentStatus.ASSIGNED],
-            IncidentStatus.ASSIGNED: [IncidentStatus.IN_PROGRESS, IncidentStatus.OPEN],
-            IncidentStatus.IN_PROGRESS: [IncidentStatus.RESOLVED, IncidentStatus.ASSIGNED],
-            IncidentStatus.RESOLVED: [IncidentStatus.CLOSED, IncidentStatus.OPEN],
-            IncidentStatus.CLOSED: [],  # Estado final, no se puede cambiar
-        }
-        
-        if new_status == self._status:
-            return  # No hay cambio
-        
-        if new_status not in allowed_transitions.get(self._status, []):
-            raise InvalidStateTransitionError(
-                f"Transición inválida: {self._status.value} -> {new_status.value}"
-            )
-        
         self._status = new_status
+        self._state = None  # Forzar recarga del nuevo estado
         self.updated_at = datetime.utcnow()
-
 
 @dataclass
 class Task:
-    """Entidad Task - Tareas asociadas a un incidente"""
+    """Entidad Task - Tareas asociadas a un incidente
+    Usa State Pattern para manejar su ciclo de vida 
+    """
     incident_id: str
     title: str
     description: str
