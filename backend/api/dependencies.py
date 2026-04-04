@@ -1,14 +1,17 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
-from infrastructure.auth_provider import SECRET_KEY, ALGORITHM
-from infrastructure.database import get_db
 from sqlalchemy.orm import Session
+
+from infrastructure.database import get_db
 from infrastructure.models import UserORM
+from infrastructure.auth_provider import SECRET_KEY, ALGORITHM
+from domain.entities import User
+from domain.enums import Role
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="No se pudieron validar las credenciales",
@@ -22,7 +25,16 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     except JWTError:
         raise credentials_exception
     
-    user = db.query(UserORM).filter(UserORM.email == email).first()
-    if user is None:
+    # Consultamos la infraestructura (ORM)
+    user_orm = db.query(UserORM).filter(UserORM.email == email).first()
+    if user_orm is None:
         raise credentials_exception
-    return user
+        
+    # Mapeamos a la Entidad de Dominio (Arquitectura Hexagonal)
+    return User(
+        id=user_orm.id,
+        name=user_orm.name,
+        email=user_orm.email,
+        hashed_password=user_orm.hashed_password,
+        role=Role(user_orm.role)
+    )
