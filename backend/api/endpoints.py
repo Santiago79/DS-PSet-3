@@ -48,7 +48,6 @@ from backend.application.dtos import (
 )
 
 router = APIRouter()
-router = APIRouter()
 
 @router.post("/login", response_model=LoginResponseDTO, summary="Autenticar usuario")
 def login(body: LoginRequestDTO, db: Session = Depends(get_db)):

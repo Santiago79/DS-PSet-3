@@ -3,7 +3,7 @@ import datetime
 from typing import Optional
 from backend.domain.exceptions import InvalidStateTransitionError, ValidationError
 from backend.domain.states import IncidentState
-from domain.enums import IncidentStatus, Role, Severity, TaskStatus
+from domain.enums import IncidentStatus, Role, Severity, TaskStatus, NotificationStatus
 from uuid import uuid4
 
 @dataclass
@@ -149,3 +149,31 @@ class Task:
             )
         self._status = TaskStatus.DONE
         self.updated_at = datetime.utcnow()
+
+@dataclass
+class Notification:
+    """
+    Entidad Notification - Maneja las alertas del sistema.
+    Parte del Issue #10.
+    """
+    recipient: str  # user_id
+    channel: str    # email, in_app, sms
+    message: str
+    event_type: str
+    id: str = field(default_factory=lambda: str(uuid4()))
+    status: NotificationStatus = field(default=NotificationStatus.PENDING)
+    created_at: datetime.datetime = field(default_factory=datetime.datetime.now)
+    read_at: Optional[datetime.datetime] = field(default=None)
+
+    def __post_init__(self) -> None:
+        if not self.recipient:
+            raise ValidationError("El destinatario es requerido")
+        if not self.message or len(self.message.strip()) < 1:
+            raise ValidationError("El contenido de la notificación no puede estar vacío")
+        if not self.channel:
+            raise ValidationError("El canal de notificación es requerido")
+
+    def mark_as_read(self) -> None:
+        """Registra la lectura de la notificación"""
+        self.read_at = datetime.datetime.now(datetime.timezone.utc)
+        self.status = NotificationStatus.READ
