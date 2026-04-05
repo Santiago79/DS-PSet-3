@@ -6,7 +6,10 @@ Los eventos se publican cuando ocurren cambios importantes en el negocio.
 from abc import ABC
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from backend.domain.entities import Incident, Task
 
 
 @dataclass
@@ -22,20 +25,20 @@ class Evento(ABC):
 @dataclass
 class IncidentCreatedEvent(Evento):
     """Evento: Un incidente fue creado"""
-    incident: Any  # Incident entity
+    incident: "Incident"
 
 
 @dataclass
 class IncidentAssignedEvent(Evento):
     """Evento: Un incidente fue asignado a un usuario"""
-    incident: Any  # Incident entity
+    incident: "Incident"
     assigned_to: str  # user_id
 
 
 @dataclass
 class IncidentStatusChangedEvent(Evento):
     """Evento: El estado de un incidente cambió"""
-    incident: Any  # Incident entity
+    incident: "Incident"
     old_status: str
     new_status: str
 
@@ -47,10 +50,10 @@ class IncidentStatusChangedEvent(Evento):
 @dataclass
 class TaskCreatedEvent(Evento):
     """Evento: Una tarea fue creada"""
-    task: Any  # Task entity
+    task: "Task"
 
 
 @dataclass
 class TaskDoneEvent(Evento):
     """Evento: Una tarea fue completada"""
-    task: Any  # Task entity
+    task: "Task"
