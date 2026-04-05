@@ -1,15 +1,15 @@
+from __future__ import annotations
+
 import streamlit as st
 
-from __future__ import annotations
 from api_client import (
     ApiError,
     get_current_user,
     get_incidents,
     get_notifications,
-    get_tasks,
     login,
-    update_task_status,
 )
+from views.tasks import show_task_list
 
 st.set_page_config(
     page_title="OpsCenter",
@@ -110,47 +110,7 @@ def _page_incidentes() -> None:
 
 def _page_tareas() -> None:
     st.header("Tareas")
-    token = st.session_state[SESSION_TOKEN]
-    try:
-        rows = get_tasks(token)
-    except ApiError as exc:
-        st.error(exc.message)
-        return
-
-    if not rows:
-        st.write("No hay tareas para mostrar.")
-        return
-
-    display_cols = [
-        "id",
-        "incident_id",
-        "title",
-        "status",
-        "assigned_to",
-        "created_at",
-    ]
-    slim = [{k: r.get(k) for k in display_cols} for r in rows]
-    st.dataframe(slim, use_container_width=True, hide_index=True)
-
-    st.subheader("Cambiar estado de una tarea")
-    task_ids = [r.get("id", "") for r in rows if r.get("id")]
-    if not task_ids:
-        return
-    col1, col2, col3 = st.columns([2, 2, 1])
-    with col1:
-        task_id = st.selectbox("ID de tarea", task_ids)
-    with col2:
-        new_status = st.selectbox("Nuevo estado", ["OPEN", "IN_PROGRESS", "DONE"])
-    with col3:
-        st.write("")
-        st.write("")
-        if st.button("Actualizar"):
-            try:
-                update_task_status(token, task_id, new_status)
-                st.success("Estado actualizado.")
-                st.rerun()
-            except ApiError as exc:
-                st.error(exc.message)
+    show_task_list()
 
 
 def _page_notificaciones() -> None:
