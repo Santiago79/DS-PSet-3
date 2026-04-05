@@ -11,6 +11,7 @@ from backend.application.use_cases import (
     MarkNotificationAsReadUseCase,
 )
 from backend.infrastructure.postgres import PostgresIncidentRepo, PostgresTaskRepo, PostgresNotificationRepo
+from backend.infrastructure.event_bus_impl import InMemoryEventBus
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
@@ -24,6 +25,9 @@ from backend.domain.enums import Role
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+# Instancia singleton del EventBus
+_event_bus = InMemoryEventBus()
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     credentials_exception = HTTPException(
@@ -67,10 +71,16 @@ def get_notification_repo(db: Session = Depends(get_db)) -> PostgresNotification
     return PostgresNotificationRepo(db)
 
 
+def get_event_bus() -> InMemoryEventBus:
+    """Dependencia para obtener el EventBus (singleton)"""
+    return _event_bus
+
+
 def get_create_incident_uc(
     incident_repo: PostgresIncidentRepo = Depends(get_incident_repo),
+    event_bus: InMemoryEventBus = Depends(get_event_bus),
 ) -> CreateIncidentUseCase:
-    return CreateIncidentUseCase(incident_repo)
+    return CreateIncidentUseCase(incident_repo, event_bus)
 
 
 def get_get_incidents_uc(
@@ -88,18 +98,21 @@ def get_get_incident_by_id_uc(
 
 def get_assign_incident_uc(
     incident_repo: PostgresIncidentRepo = Depends(get_incident_repo),
+    event_bus: InMemoryEventBus = Depends(get_event_bus),
 ) -> AssignIncidentUseCase:
-    return AssignIncidentUseCase(incident_repo)
+    return AssignIncidentUseCase(incident_repo, event_bus)
 
 def get_change_incident_status_uc(
     incident_repo: PostgresIncidentRepo = Depends(get_incident_repo),
+    event_bus: InMemoryEventBus = Depends(get_event_bus),
 ) -> ChangeIncidentStatusUseCase:
-    return ChangeIncidentStatusUseCase(incident_repo)
+    return ChangeIncidentStatusUseCase(incident_repo, event_bus)
 def get_create_task_uc(
     task_repo: PostgresTaskRepo = Depends(get_task_repo),
     incident_repo: PostgresIncidentRepo = Depends(get_incident_repo),
+    event_bus: InMemoryEventBus = Depends(get_event_bus),
 ) -> CreateTaskUseCase:
-    return CreateTaskUseCase(task_repo, incident_repo)
+    return CreateTaskUseCase(task_repo, incident_repo, event_bus)
 
 
 def get_get_tasks_uc(
@@ -110,8 +123,9 @@ def get_get_tasks_uc(
 
 def get_change_task_status_uc(
     task_repo: PostgresTaskRepo = Depends(get_task_repo),
+    event_bus: InMemoryEventBus = Depends(get_event_bus),
 ) -> ChangeTaskStatusUseCase:
-    return ChangeTaskStatusUseCase(task_repo)
+    return ChangeTaskStatusUseCase(task_repo, event_bus)
 
 def get_notifications_uc(
     notification_repo: PostgresNotificationRepo = Depends(get_notification_repo),
