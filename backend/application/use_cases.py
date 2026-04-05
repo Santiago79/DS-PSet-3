@@ -12,6 +12,14 @@ from backend.domain.enums import Severity, IncidentStatus, TaskStatus, Notificat
 from backend.domain.exceptions import ValidationError, NotFoundError, InvalidStateTransitionError
 from backend.domain.factories import IncidentFactory, TaskFactory
 from backend.domain.repositories import IncidentRepository, TaskRepository
+from backend.domain.interfaces.event_bus import EventBus
+from backend.domain.events import (
+    IncidentCreatedEvent,
+    IncidentAssignedEvent,
+    IncidentStatusChangedEvent,
+    TaskCreatedEvent,
+    TaskDoneEvent,
+)
 from backend.application.dtos import (
     CreateIncidentDTO,
     IncidentResponseDTO,
@@ -30,8 +38,9 @@ from backend.application.dtos import (
 class CreateIncidentUseCase:
     """Caso de uso: Crear un incidente"""
     
-    def __init__(self, incident_repo: IncidentRepository):
+    def __init__(self, incident_repo: IncidentRepository, event_bus: EventBus):
         self.incident_repo = incident_repo
+        self.event_bus = event_bus
     
     def execute(self, dto: CreateIncidentDTO, created_by: str) -> IncidentResponseDTO:
         # Validar severity
@@ -51,7 +60,8 @@ class CreateIncidentUseCase:
         # Persistir
         saved = self.incident_repo.save(incident)
         
-        # TODO: Publicar evento INCIDENT_CREATED (Persona 3)
+        # Publicar evento INCIDENT_CREATED
+        self.event_bus.publish(IncidentCreatedEvent(incident=saved))
         
         return self._to_response(saved, tasks=[])
     
@@ -148,8 +158,9 @@ class GetIncidentByIdUseCase:
 class AssignIncidentUseCase:
     """Caso de uso: Asignar un incidente (solo ADMIN/SUPERVISOR)"""
     
-    def __init__(self, incident_repo: IncidentRepository):
+    def __init__(self, incident_repo: IncidentRepository, event_bus: EventBus):
         self.incident_repo = incident_repo
+        self.event_bus = event_bus
     
     def execute(self, incident_id: str, dto: AssignIncidentDTO) -> IncidentResponseDTO:
         incident = self.incident_repo.get_by_id(incident_id)
@@ -159,7 +170,8 @@ class AssignIncidentUseCase:
         incident.assign_to(dto.assigned_to)
         saved = self.incident_repo.save(incident)
         
-        # TODO: Publicar evento INCIDENT_ASSIGNED (Persona 3)
+        # Publicar evento INCIDENT_ASSIGNED
+        self.event_bus.publish(IncidentAssignedEvent(incident=saved, assigned_to=dto.assigned_to))
         
         return IncidentResponseDTO(
             id=saved.id,
@@ -178,8 +190,9 @@ class AssignIncidentUseCase:
 class ChangeIncidentStatusUseCase:
     """Caso de uso: Cambiar estado de un incidente"""
     
-    def __init__(self, incident_repo: IncidentRepository):
+    def __init__(self, incident_repo: IncidentRepository, event_bus: EventBus):
         self.incident_repo = incident_repo
+        self.event_bus = event_bus
     
     def execute(self, incident_id: str, dto: ChangeStatusDTO) -> IncidentResponseDTO:
         incident = self.incident_repo.get_by_id(incident_id)
@@ -187,6 +200,9 @@ class ChangeIncidentStatusUseCase:
             raise NotFoundError(f"Incidente {incident_id} no encontrado")
         
         new_status = IncidentStatus(dto.status)
+        
+        # Capturar el estado anterior
+        old_status = incident.status
         
         # Usar los métodos específicos del State Pattern
         if new_status == IncidentStatus.ASSIGNED:
@@ -203,7 +219,12 @@ class ChangeIncidentStatusUseCase:
         
         saved = self.incident_repo.save(incident)
         
-        # TODO: Publicar evento INCIDENT_STATUS_CHANGED (Persona 3)
+        # Publicar evento INCIDENT_STATUS_CHANGED
+        self.event_bus.publish(IncidentStatusChangedEvent(
+            incident=saved,
+            old_status=old_status.value,
+            new_status=saved.status.value
+        ))
         
         return IncidentResponseDTO(
             id=saved.id,
@@ -226,9 +247,10 @@ class ChangeIncidentStatusUseCase:
 class CreateTaskUseCase:
     """Caso de uso: Crear una tarea asociada a un incidente"""
     
-    def __init__(self, task_repo: TaskRepository, incident_repo: IncidentRepository):
+    def __init__(self, task_repo: TaskRepository, incident_repo: IncidentRepository, event_bus: EventBus):
         self.task_repo = task_repo
         self.incident_repo = incident_repo
+        self.event_bus = event_bus
     
     def execute(self, dto: CreateTaskDTO) -> TaskResponseDTO:
         # Verificar que el incidente existe
@@ -246,7 +268,8 @@ class CreateTaskUseCase:
         
         saved = self.task_repo.save(task)
         
-        # TODO: Publicar evento TASK_CREATED (Persona 3)
+        # Publicar evento TASK_CREATED
+        self.event_bus.publish(TaskCreatedEvent(task=saved))
         
         return TaskResponseDTO(
             id=saved.id,
@@ -292,8 +315,9 @@ class GetTasksUseCase:
 class ChangeTaskStatusUseCase:
     """Caso de uso: Cambiar estado de una tarea"""
     
-    def __init__(self, task_repo: TaskRepository):
+    def __init__(self, task_repo: TaskRepository, event_bus: EventBus):
         self.task_repo = task_repo
+        self.event_bus = event_bus
     
     def execute(self, task_id: str, dto: ChangeStatusDTO) -> TaskResponseDTO:
         task = self.task_repo.get_by_id(task_id)
@@ -312,7 +336,9 @@ class ChangeTaskStatusUseCase:
         
         saved = self.task_repo.save(task)
         
-        # TODO: Publicar evento TASK_DONE si corresponde (Persona 3)
+        # Publicar evento TASK_DONE si la tarea fue completada
+        if saved.status == TaskStatus.DONE:
+            self.event_bus.publish(TaskDoneEvent(task=saved))
         
         return TaskResponseDTO(
             id=saved.id,
