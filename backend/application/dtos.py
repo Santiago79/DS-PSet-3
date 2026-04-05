@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+import datetime
+from typing import List, Optional
 
 @dataclass
 class UserResponseDTO:
@@ -18,12 +20,23 @@ class LoginResponseDTO:
     token_type: str = "bearer"
 
 @dataclass
+class TaskResponseDTO:
+    """DTO para respuesta de tarea"""
+    id: str
+    incident_id: str
+    title: str
+    description: str
+    status: str
+    assigned_to: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+
+@dataclass
 class CreateIncidentDTO:
     """DTO para crear un incidente"""
     title: str
     description: str
     severity: str  # "LOW", "MEDIUM", "HIGH", "CRITICAL"
-
 
 @dataclass
 class IncidentResponseDTO:
@@ -37,7 +50,7 @@ class IncidentResponseDTO:
     assigned_to: Optional[str]
     created_at: datetime
     updated_at: datetime
-    tasks: List["TaskResponseDTO"]  # Relación con tareas
+    tasks: List["TaskResponseDTO"] 
 
 
 @dataclass
@@ -61,18 +74,6 @@ class CreateTaskDTO:
     assigned_to: Optional[str] = None
 
 
-@dataclass
-class TaskResponseDTO:
-    """DTO para respuesta de tarea"""
-    id: str
-    incident_id: str
-    title: str
-    description: str
-    status: str
-    assigned_to: Optional[str]
-    created_at: datetime
-    updated_at: datetime
 
 
-# Para resolver referencia circular
-IncidentResponseDTO.tasks = List[TaskResponseDTO]
+

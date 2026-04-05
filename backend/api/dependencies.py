@@ -1,15 +1,25 @@
-from backend.application.use_cases import AssignIncidentUseCase, ChangeIncidentStatusUseCase, ChangeTaskStatusUseCase, CreateIncidentUseCase, CreateTaskUseCase, GetIncidentByIdUseCase, GetIncidentsUseCase, GetTasksUseCase
+from backend.application.use_cases import (
+    AssignIncidentUseCase,
+    ChangeIncidentStatusUseCase,
+    ChangeTaskStatusUseCase,
+    CreateIncidentUseCase,
+    CreateTaskUseCase,
+    GetIncidentByIdUseCase,
+    GetIncidentsUseCase,
+    GetTasksUseCase,
+)
 from backend.infrastructure.postgres import PostgresIncidentRepo, PostgresTaskRepo
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 
-from infrastructure.database import get_db
-from infrastructure.models import UserORM
-from infrastructure.auth_provider import SECRET_KEY, ALGORITHM
-from domain.entities import User
-from domain.enums import Role
+from backend.infrastructure.database import get_db
+from backend.infrastructure.models import UserORM
+from backend.infrastructure.auth_provider import SECRET_KEY, ALGORITHM
+from backend.domain.entities import User
+from backend.domain.enums import Role
+
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 

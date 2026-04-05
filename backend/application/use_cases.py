@@ -6,14 +6,13 @@ Coordinan la lógica de negocio, validaciones y persistencia.
 from uuid import uuid4
 from datetime import datetime
 from typing import List, Optional
-from sqlalchemy.orm import Session
 
-from domain.entities import Incident, Task
-from domain.enums import Severity, IncidentStatus, TaskStatus
-from domain.exceptions import ValidationError, NotFoundError, InvalidStateTransitionError
-from domain.factories import IncidentFactory, TaskFactory
-from domain.repositories import IncidentRepository, TaskRepository
-from application.dtos import (
+from backend.domain.entities import Incident, Task
+from backend.domain.enums import Severity, IncidentStatus, TaskStatus
+from backend.domain.exceptions import ValidationError, NotFoundError, InvalidStateTransitionError
+from backend.domain.factories import IncidentFactory, TaskFactory
+from backend.domain.repositories import IncidentRepository, TaskRepository
+from backend.application.dtos import (
     CreateIncidentDTO,
     IncidentResponseDTO,
     AssignIncidentDTO,
@@ -21,7 +20,6 @@ from application.dtos import (
     CreateTaskDTO,
     TaskResponseDTO,
 )
-
 
 # ============================================
 # Casos de uso - Incidentes
