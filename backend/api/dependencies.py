@@ -7,8 +7,10 @@ from backend.application.use_cases import (
     GetIncidentByIdUseCase,
     GetIncidentsUseCase,
     GetTasksUseCase,
+    GetNotificationsUseCase,
+    MarkNotificationAsReadUseCase,
 )
-from backend.infrastructure.postgres import PostgresIncidentRepo, PostgresTaskRepo
+from backend.infrastructure.postgres import PostgresIncidentRepo, PostgresTaskRepo, PostgresNotificationRepo
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
@@ -58,6 +60,13 @@ def get_incident_repo(db: Session = Depends(get_db)) -> PostgresIncidentRepo:
 def get_task_repo(db: Session = Depends(get_db)) -> PostgresTaskRepo:
     """Dependencia para obtener el repositorio de Tareas"""
     return PostgresTaskRepo(db)
+
+
+def get_notification_repo(db: Session = Depends(get_db)) -> PostgresNotificationRepo:
+    """Dependencia para obtener el repositorio de Notificaciones"""
+    return PostgresNotificationRepo(db)
+
+
 def get_create_incident_uc(
     incident_repo: PostgresIncidentRepo = Depends(get_incident_repo),
 ) -> CreateIncidentUseCase:
@@ -103,3 +112,15 @@ def get_change_task_status_uc(
     task_repo: PostgresTaskRepo = Depends(get_task_repo),
 ) -> ChangeTaskStatusUseCase:
     return ChangeTaskStatusUseCase(task_repo)
+
+def get_notifications_uc(
+    notification_repo: PostgresNotificationRepo = Depends(get_notification_repo),
+) -> GetNotificationsUseCase:
+   
+    return GetNotificationsUseCase(notification_repo)
+
+
+def get_mark_notification_as_read_uc(
+    notification_repo: PostgresNotificationRepo = Depends(get_notification_repo),
+) -> MarkNotificationAsReadUseCase:
+    return MarkNotificationAsReadUseCase(notification_repo)

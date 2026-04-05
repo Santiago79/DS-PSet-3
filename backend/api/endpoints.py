@@ -9,6 +9,7 @@ from backend.application.use_cases import (
     GetIncidentByIdUseCase,
     GetIncidentsUseCase,
     GetTasksUseCase,
+    GetNotificationsUseCase,
 )
 from backend.domain.exceptions import InvalidStateTransitionError, NotFoundError, ValidationError
 from fastapi import APIRouter, Depends, HTTPException, status, Query
@@ -29,6 +30,8 @@ from backend.api.dependencies import (
     get_get_incident_by_id_uc,
     get_get_incidents_uc,
     get_get_tasks_uc,
+    get_notifications_uc,
+    get_mark_notification_as_read_uc,
 )
 from backend.api.guards import require_role
 from backend.application.dtos import (
@@ -41,6 +44,7 @@ from backend.application.dtos import (
     UserResponseDTO,
     LoginRequestDTO,
     LoginResponseDTO,
+    NotificationResponseDTO,
 )
 
 router = APIRouter()
@@ -261,4 +265,35 @@ def change_task_status(
     except NotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except InvalidStateTransitionError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get(
+    "/notifications",
+    response_model=List[NotificationResponseDTO],
+    summary="Obtener notificaciones"
+)
+def get_notifications(
+    current_user: User = Depends(get_current_user),
+    unread_only: bool = Query(False, description="Si es true, retorna solo notificaciones no leídas"),
+    use_case: GetNotificationsUseCase = Depends(get_notifications_uc),
+):
+    """
+    Retorna notificaciones según el rol del usuario:
+    - **ADMIN**: ve todas las notificaciones del sistema
+    - **SUPERVISOR y OPERATOR**: ven solo sus notificaciones
+    
+    Query params:
+    - `unread_only` (bool, default=False): Si es true, retorna solo notificaciones no leídas
+    
+    Ejemplo: GET /notifications?unread_only=true
+    """
+    try:
+        notifications = use_case.execute(
+            user_id=current_user.id,
+            user_role=current_user.role.value,
+            unread_only=unread_only
+        )
+        return notifications
+    except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

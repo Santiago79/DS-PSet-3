@@ -7,8 +7,8 @@ from uuid import uuid4
 from datetime import datetime
 from typing import List, Optional
 
-from backend.domain.entities import Incident, Task
-from backend.domain.enums import Severity, IncidentStatus, TaskStatus
+from backend.domain.entities import Incident, Task, Notification
+from backend.domain.enums import Severity, IncidentStatus, TaskStatus, NotificationStatus
 from backend.domain.exceptions import ValidationError, NotFoundError, InvalidStateTransitionError
 from backend.domain.factories import IncidentFactory, TaskFactory
 from backend.domain.repositories import IncidentRepository, TaskRepository
@@ -19,6 +19,8 @@ from backend.application.dtos import (
     ChangeStatusDTO,
     CreateTaskDTO,
     TaskResponseDTO,
+    NotificationResponseDTO,
+    MarkNotificationReadDTO,
 )
 
 # ============================================
@@ -322,3 +324,56 @@ class ChangeTaskStatusUseCase:
             created_at=saved.created_at,
             updated_at=saved.updated_at
         )
+
+
+# ============================================
+# Casos de uso - Notificaciones
+# ============================================
+
+class GetNotificationsUseCase:
+    """Caso de uso: Obtener notificaciones según el rol del usuario"""
+    
+    def __init__(self, notification_repo):
+        self.notification_repo = notification_repo
+    
+    def execute(self, user_id: str, user_role: str, unread_only: bool = False) -> List[NotificationResponseDTO]:
+        """
+        Obtiene notificaciones:
+        - ADMIN: todas las notificaciones
+        - SUPERVISOR: sus notificaciones
+        - OPERATOR: sus notificaciones
+        """
+        if user_role == "ADMIN":
+            notifications = self.notification_repo.find_all()
+        else:
+            # SUPERVISOR y OPERATOR ven solo sus notificaciones
+            notifications = self.notification_repo.find_by_recipient(user_id)
+        
+        # Filtrar por no leídas si se solicita
+        if unread_only:
+            notifications = [n for n in notifications if n.status != NotificationStatus.READ]
+        
+        return [self._to_response(notif) for notif in notifications]
+    
+    def _to_response(self, notification: Notification) -> NotificationResponseDTO:
+        return NotificationResponseDTO(
+            id=notification.id,
+            recipient=notification.recipient,
+            channel=notification.channel,
+            message=notification.message,
+            event_type=notification.event_type,
+            status=notification.status.value,
+            created_at=notification.created_at,
+            read_at=notification.read_at
+        )
+
+
+class MarkNotificationAsReadUseCase:
+    """Caso de uso: Marcar una notificación como leída"""
+    
+    def __init__(self, notification_repo):
+        self.notification_repo = notification_repo
+    
+    def execute(self, notification_id: str) -> None:
+        """Marca una notificación como leída"""
+        self.notification_repo.mark_as_read(notification_id)

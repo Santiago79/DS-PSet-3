@@ -74,6 +74,25 @@ class CreateTaskDTO:
     assigned_to: Optional[str] = None
 
 
+@dataclass
+class NotificationResponseDTO:
+    """DTO para respuesta de notificación"""
+    id: str
+    recipient: str
+    channel: str
+    message: str
+    event_type: str
+    status: str
+    created_at: datetime.datetime
+    read_at: Optional[datetime.datetime]
+
+
+@dataclass
+class MarkNotificationReadDTO:
+    """DTO para marcar una notificación como leída"""
+    notification_id: str
+
+
 
 
 

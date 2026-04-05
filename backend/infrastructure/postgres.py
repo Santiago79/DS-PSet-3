@@ -2,9 +2,9 @@ from __future__ import annotations
 from typing import Optional, List
 from sqlalchemy.orm import Session
 
-from infrastructure.models import UserORM, IncidentORM, TaskORM
-from domain.entities import User, Incident, Task
-from domain.enums import Role, Severity, IncidentStatus, TaskStatus
+from infrastructure.models import UserORM, IncidentORM, TaskORM, NotificationORM
+from domain.entities import User, Incident, Task, Notification
+from domain.enums import Role, Severity, IncidentStatus, TaskStatus, NotificationStatus
 
 
 # ============================================
@@ -171,4 +171,75 @@ class PostgresTaskRepo:
             created_at=model.created_at,
             updated_at=model.updated_at,
             _status=TaskStatus(model.status)
+        )
+
+
+# ============================================
+# Repositorio de Notificaciones
+# ============================================
+
+class PostgresNotificationRepo:
+    """Implementación con PostgreSQL del repositorio de Notificaciones"""
+    
+    def __init__(self, session: Session):
+        self.session = session
+
+    def save(self, notification: Notification) -> Notification:
+        """Guarda una notificación (crea o actualiza)"""
+        existing = self.session.get(NotificationORM, notification.id)
+        
+        if existing:
+            existing.recipient = notification.recipient
+            existing.channel = notification.channel
+            existing.message = notification.message
+            existing.event_type = notification.event_type
+            existing.status = notification.status.value
+            existing.read_at = notification.read_at
+        else:
+            model = NotificationORM(
+                id=notification.id,
+                recipient=notification.recipient,
+                channel=notification.channel,
+                message=notification.message,
+                event_type=notification.event_type,
+                status=notification.status.value,
+                created_at=notification.created_at,
+                read_at=notification.read_at
+            )
+            self.session.add(model)
+        
+        self.session.commit()
+        return notification
+
+    def find_by_recipient(self, user_id: str) -> List[Notification]:
+        """Obtiene todas las notificaciones de un usuario por su ID"""
+        models = self.session.query(NotificationORM).filter(
+            NotificationORM.recipient == user_id
+        ).all()
+        return [self._to_domain(model) for model in models]
+
+    def find_all(self) -> List[Notification]:
+        """Obtiene todas las notificaciones del sistema"""
+        models = self.session.query(NotificationORM).all()
+        return [self._to_domain(model) for model in models]
+
+    def mark_as_read(self, notification_id: str) -> None:
+        """Marca una notificación como leída"""
+        notification = self.session.get(NotificationORM, notification_id)
+        if notification:
+            from datetime import datetime, timezone
+            notification.read_at = datetime.now(timezone.utc)
+            notification.status = NotificationStatus.READ.value
+            self.session.commit()
+
+    def _to_domain(self, model: NotificationORM) -> Notification:
+        return Notification(
+            id=model.id,
+            recipient=model.recipient,
+            channel=model.channel,
+            message=model.message,
+            event_type=model.event_type,
+            status=NotificationStatus(model.status),
+            created_at=model.created_at,
+            read_at=model.read_at
         )
