@@ -33,7 +33,7 @@ from backend.api.dependencies import (
     get_notifications_uc,
     get_mark_notification_as_read_uc,
 )
-from backend.api.guards import require_role
+from backend.api.guards import require_any_role, require_role
 from backend.application.dtos import (
     AssignIncidentDTO,
     ChangeStatusDTO,
@@ -87,7 +87,9 @@ def get_me(current_user: User = Depends(get_current_user)):
     response_model=IncidentResponseDTO,
     status_code=status.HTTP_201_CREATED,
     summary="Crear un incidente",
-    dependencies=[Depends(require_role(Role.OPERATOR))]
+    dependencies=[
+        Depends(require_any_role(Role.OPERATOR, Role.SUPERVISOR, Role.ADMIN))
+    ],
 )
 def create_incident(
     dto: CreateIncidentDTO,

@@ -28,3 +28,19 @@ def require_role(required_role: Role):
         return current_user
 
     return role_checker
+
+
+def require_any_role(*roles: Role):
+    """Permite solo los roles listados (sin jerarquía implícita)."""
+    allowed = frozenset(roles)
+
+    def checker(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.role not in allowed:
+            needed = ", ".join(r.value for r in roles)
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Acceso denegado. Se requiere uno de los roles: {needed}",
+            )
+        return current_user
+
+    return checker
