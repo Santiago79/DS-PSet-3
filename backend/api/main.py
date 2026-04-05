@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from backend.infrastructure import models
 from backend.infrastructure.database import engine, Base, SessionLocal
 from backend.infrastructure.Observers import NotificationObserver, LoggingObserver
-from backend.api.dependencies import _event_bus
+from backend.api.dependencies import get_event_bus
 
 Base.metadata.create_all(bind=engine)
 
@@ -14,9 +14,11 @@ def initialize_observers() -> None:
     Suscribe los observers al EventBus en la inicialización de la aplicación.
     Esto asegura que todos los eventos publicados disparen las acciones apropiadas.
     """
+    event_bus = get_event_bus()
+    
     # Suscribir LoggingObserver (sin dependencias)
     logging_observer = LoggingObserver()
-    _event_bus.subscribe(logging_observer)
+    event_bus.subscribe(logging_observer)
     
     # Inicializar repositorio para NotificationObserver
     db = SessionLocal()
@@ -25,7 +27,7 @@ def initialize_observers() -> None:
     
     # Crear y suscribir NotificationObserver
     notification_observer = NotificationObserver(notification_repo)
-    _event_bus.subscribe(notification_observer)
+    event_bus.subscribe(notification_observer)
 
 
 @app.on_event("startup")
