@@ -27,3 +27,15 @@ class TaskStatus(str, Enum):
     OPEN = "OPEN"
     IN_PROGRESS = "IN_PROGRESS"
     DONE = "DONE"
+
+class NotificationStatus(str, Enum):
+    """Estados solicitados en el PSet [cite: 98]"""
+    PENDING = "PENDING"
+    SENT = "SENT"
+    FAILED = "FAILED"
+
+class NotificationChannel(str, Enum):
+    """Canales sugeridos [cite: 95]"""
+    EMAIL = "email"
+    SMS = "sms"
+    IN_APP = "in_app"
