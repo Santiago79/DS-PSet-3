@@ -5,11 +5,15 @@ Centraliza validaciones de negocio y asegura que las entidades se creen en estad
 
 from uuid import uuid4
 from datetime import datetime
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-from domain.entities import Incident, Task
-from domain.enums import Severity, IncidentStatus, TaskStatus
-from domain.exceptions import ValidationError
+from backend.domain.entities import Incident, Task, Notification
+from backend.domain.enums import Severity, IncidentStatus, TaskStatus, NotificationStatus, NotificationChannel
+from backend.domain.exceptions import ValidationError
+from backend.domain.events import Evento
+
+if TYPE_CHECKING:
+    from backend.domain.repositories import NotificationRepository
 
 
 class IncidentFactory:
@@ -115,4 +119,93 @@ class TaskFactory:
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             _status=TaskStatus.OPEN
+        )
+
+
+# ============================================
+# NotificationCommandFactory
+# ============================================
+
+class NotificationCommandFactory:
+    """
+    Factory para crear los comandos apropiados según el canal de notificación.
+    Centraliza la creación de comandos y facilita su extensión.
+    """
+    
+    @staticmethod
+    def create_command(
+        channel: str,
+        notification_repo: "NotificationRepository",
+        evento: Evento,
+        **kwargs,
+    ):
+        """
+        Crea un comando de notificación según el canal especificado.
+        
+        Args:
+            channel: Canal de notificación ("email", "in_app", "sms", etc.)
+            notification_repo: Repositorio para persistir notificaciones
+            evento: Evento de dominio que genera la notificación
+            **kwargs: Parámetros específicos für each channel
+                - Para EMAIL: recipient
+                - Para IN_APP: user_id
+        
+        Returns:
+            NotificationCommand: Comando apropiado para el canal
+        
+        Raises:
+            ValueError: Si el canal no es soportado o faltan parámetros
+        """
+        # Importar aquí para evitar circular imports
+        from backend.domain.commands import EmailNotificationCommand, InAppNotificationCommand
+        
+        if channel == NotificationChannel.EMAIL.value:
+            return NotificationCommandFactory._create_email_command(
+                notification_repo, evento, kwargs, EmailNotificationCommand
+            )
+        
+        elif channel == NotificationChannel.IN_APP.value:
+            return NotificationCommandFactory._create_in_app_command(
+                notification_repo, evento, kwargs, InAppNotificationCommand
+            )
+        
+        else:
+            raise ValueError(f"Canal de notificación no soportado: {channel}")
+    
+    @staticmethod
+    def _create_email_command(
+        notification_repo: "NotificationRepository",
+        evento: Evento,
+        kwargs: dict,
+        EmailNotificationCommand,
+    ):
+        """Crea un comando de email con validación de parámetros"""
+        required_params = ["recipient"]
+        for param in required_params:
+            if param not in kwargs:
+                raise ValueError(f"Parámetro requerido faltante para EMAIL: {param}")
+        
+        return EmailNotificationCommand(
+            notification_repo=notification_repo,
+            recipient=kwargs["recipient"],
+            evento=evento,
+        )
+    
+    @staticmethod
+    def _create_in_app_command(
+        notification_repo: "NotificationRepository",
+        evento: Evento,
+        kwargs: dict,
+        InAppNotificationCommand,
+    ):
+        """Crea un comando in-app con validación de parámetros"""
+        required_params = ["user_id"]
+        for param in required_params:
+            if param not in kwargs:
+                raise ValueError(f"Parámetro requerido faltante para IN_APP: {param}")
+        
+        return InAppNotificationCommand(
+            notification_repo=notification_repo,
+            user_id=kwargs["user_id"],
+            evento=evento,
         )
