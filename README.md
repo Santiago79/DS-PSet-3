@@ -98,7 +98,6 @@ Abre tu navegador en: [http://localhost:8501](http://localhost:8501)
 
 ## 4. Cómo usar el sistema
 
----
 
 ## Usuarios de prueba
 
