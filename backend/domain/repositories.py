@@ -61,6 +61,9 @@ class TaskRepository(Protocol):
     def get_by_assigned_to(self, user_id: str) -> List[Task]:
         """Obtiene tareas asignadas a un usuario"""
         ...
+    def get_all(self, skip: int = 0, limit: int = 100) -> List[Task]:
+        """Obtiene todas las tareas con paginación (para ADMIN y SUPERVISOR)"""
+        ...
 
 class NotificationRepository(Protocol):
     """Interfaz para el repositorio de Notificaciones"""

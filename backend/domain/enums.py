@@ -33,6 +33,7 @@ class NotificationStatus(str, Enum):
     PENDING = "PENDING"
     SENT = "SENT"
     FAILED = "FAILED"
+    READ = "READ"
 
 class NotificationChannel(str, Enum):
     """Canales sugeridos [cite: 95]"""
