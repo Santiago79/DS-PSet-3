@@ -73,3 +73,12 @@ def update_incident_status(token, incident_id, status):
 
 def create_task(token, data):
     return _request_json("POST", "/tasks", token=token, json=data)
+
+# --- NUEVA FUNCIÓN AGREGADA ---
+def mark_notification_read(token, notification_id):
+    return _request_json(
+        "PATCH", 
+        f"/notifications/{notification_id}/read", 
+        token=token, 
+        json={"notification_id": notification_id}
+    )

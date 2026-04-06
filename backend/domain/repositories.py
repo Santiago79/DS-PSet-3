@@ -41,7 +41,9 @@ class IncidentRepository(Protocol):
     def get_by_assigned_to(self, user_id: str) -> List[Incident]:
         """Obtiene incidentes asignados a un usuario"""
         ...
-
+    def get_operational(self, skip: int = 0, limit: int = 100) -> List[Incident]:
+        """Obtiene incidentes operativos (excluye RESOLVED y CLOSED)"""
+        ...
 
 class TaskRepository(Protocol):
     """Interfaz para el repositorio de Tareas"""

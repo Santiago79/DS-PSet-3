@@ -90,12 +90,10 @@ class GetIncidentsUseCase:
         if user_role == "ADMIN":
             incidents = self.incident_repo.get_all(skip, limit)
         elif user_role == "SUPERVISOR":
-            incidents = self.incident_repo.get_all(skip, limit)
+            incidents = self.incident_repo.get_operational(skip, limit)  # ← Cambiar aquí
         else:  # OPERATOR
-            # Ver incidentes creados por él o asignados a él
             created = self.incident_repo.get_by_created_by(user_id)
             assigned = self.incident_repo.get_by_assigned_to(user_id)
-            # Unir y eliminar duplicados
             incidents = list({inc.id: inc for inc in created + assigned}.values())
         
         return [self._to_response(inc) for inc in incidents]
