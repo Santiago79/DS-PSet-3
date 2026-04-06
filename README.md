@@ -244,9 +244,9 @@ Los diagramas se encuentran en `/docs`:
 
 | Archivo | Descripción |
 |---------|-------------|
-| `use_case_diagram.puml` | Actores ADMIN, SUPERVISOR, OPERATOR y sus casos de uso con los endpoints reales |
-| `class_diagram.puml` | Todas las clases del dominio, infraestructura, patrones y DTOs con sus relaciones exactas |
-| `sequence_diagram.puml` | Flujo completo: Operator crea incidente → ORM → EventBus → Observers → AbstractFactory → TemplateMethod → Command → NotificationORM |
+| `use_case_diagram.png` | Actores ADMIN, SUPERVISOR, OPERATOR y sus casos de uso con los endpoints reales |
+| `class_diagram.png` | Todas las clases del dominio, infraestructura, patrones y DTOs con sus relaciones exactas |
+| `sequence_diagram.png` | Flujo completo: Operator crea incidente → ORM → EventBus → Observers → AbstractFactory → TemplateMethod → Command → NotificationORM |
 
 ---
 
