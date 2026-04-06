@@ -11,10 +11,10 @@ from uuid import uuid4
 from datetime import datetime
 from typing import Optional, TYPE_CHECKING
 
-from backend.domain.entities import Incident, Task, Notification
-from backend.domain.enums import Severity, IncidentStatus, TaskStatus, NotificationStatus, NotificationChannel
-from backend.domain.exceptions import ValidationError
-from backend.domain.events import (
+from domain.entities import Incident, Task, Notification
+from domain.enums import Severity, IncidentStatus, TaskStatus, NotificationStatus, NotificationChannel
+from domain.exceptions import ValidationError
+from domain.events import (
     Evento,
     IncidentCreatedEvent,
     IncidentAssignedEvent,
@@ -24,9 +24,9 @@ from backend.domain.events import (
 )
 
 if TYPE_CHECKING:
-    from backend.domain.commands import NotificationCommand
-    from backend.domain.templates import NotificationMessageBuilder
-    from backend.domain.repositories import NotificationRepository
+    from domain.commands import NotificationCommand
+    from domain.templates import NotificationMessageBuilder
+    from domain.repositories import NotificationRepository
 
 
 class IncidentFactory:
