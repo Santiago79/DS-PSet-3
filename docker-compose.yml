@@ -15,6 +15,7 @@ services:
     build:
       context: ./backend
     container_name: opscenter_api
+    restart: on-failure
     ports:
       - "8000:8000"
     depends_on:

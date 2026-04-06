@@ -192,3 +192,13 @@ def create_task(token: str, data: Dict[str, Any]) -> Dict[str, Any]:
     if not isinstance(result, dict):
         raise ApiError("Respuesta de creación de tarea inválida")
     return result
+
+def get_incident(token: str, incident_id: str) -> Dict[str, Any]:
+    """
+    Obtiene el detalle de un incidente específico por su ID.
+    GET /incidents/{incident_id}
+    """
+    data = _request_json("GET", f"/incidents/{incident_id}", token=token)
+    if not isinstance(data, dict):
+        raise ApiError("Respuesta de detalle de incidente inválida")
+    return data
