@@ -98,15 +98,44 @@ Abre tu navegador en: [http://localhost:8501](http://localhost:8501)
 
 ## 4. Cómo usar el sistema
 
-### Credenciales de ejemplo
+---
 
-| Rol | Email | Contraseña |
-|-----|-------|------------|
-| Admin | `admin@opscenter.com` | `admin123` |
-| Supervisor | `supervisor@opscenter.com` | `super123` |
-| Operator | `operator@opscenter.com` | `oper123` |
+## Usuarios de prueba
 
-> Los usuarios de ejemplo se crean automáticamente al iniciar la aplicación si no existen (seed en el startup de la API).
+El sistema incluye tres usuarios predefinidos con diferentes roles para que puedas probar todas las funcionalidades:
+
+| Rol | Email | Contraseña | Permisos |
+|-----|-------|-----------|----------|
+| **Administrador** | `admin@opscenter.com` | `admin123` | Acceso total: ver todos los incidentes/tareas, asignar incidentes, cambiar estados, crear tareas, gestionar usuarios |
+| **Supervisor** | `supervisor@opscenter.com` | `supervisor123` | Ver todos los incidentes/tareas, asignar incidentes, cambiar estados, crear tareas |
+| **Operador** | `operator@opscenter.com` | `operator123` | Crear incidentes, ver solo sus incidentes y tareas asignadas, actualizar estado de sus tareas |
+
+Estos usuarios se crean automáticamente la primera vez que levantas el sistema. No es necesario registrarlos manualmente.
+
+---
+
+## Cómo ingresar
+
+1. Abre el frontend en tu navegador: `http://localhost:8501`
+
+2. En la pantalla de login, ingresa con cualquiera de las credenciales de arriba:
+
+   - **Email:** `admin@opscenter.com`
+   - **Contraseña:** `admin123`
+
+3. Haz clic en **Ingresar**
+
+4. Una vez dentro, verás un menú lateral con las opciones disponibles según tu rol.
+
+---
+
+## Nota
+
+Los usuarios se crean solo si no existen en la base de datos. Si ya habías levantado el sistema antes, puede que estos usuarios ya estén creados con los IDs que se generaron automáticamente. Si tienes problemas para iniciar sesión, revisa los logs del backend con:
+
+```bash
+docker compose logs api | grep "Usuario creado"
+```
 
 ### Pasos básicos
 
