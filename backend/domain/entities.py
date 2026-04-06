@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
-import datetime
+from datetime import datetime
 from typing import Optional
-from backend.domain.exceptions import InvalidStateTransitionError, ValidationError
-from backend.domain.states import IncidentState
+from domain.exceptions import InvalidStateTransitionError, ValidationError
+from domain.states import IncidentState
 from domain.enums import IncidentStatus, Role, Severity, TaskStatus, NotificationStatus
 from uuid import uuid4
 
@@ -162,8 +162,8 @@ class Notification:
     event_type: str
     id: str = field(default_factory=lambda: str(uuid4()))
     status: NotificationStatus = field(default=NotificationStatus.PENDING)
-    created_at: datetime.datetime = field(default_factory=datetime.datetime.now)
-    read_at: Optional[datetime.datetime] = field(default=None)
+    created_at: datetime = field(default_factory=datetime.now)
+    read_at: Optional[datetime] = field(default=None)
 
     def __post_init__(self) -> None:
         if not self.recipient:
@@ -175,5 +175,5 @@ class Notification:
 
     def mark_as_read(self) -> None:
         """Registra la lectura de la notificación"""
-        self.read_at = datetime.datetime.now(datetime.timezone.utc)
+        self.read_at = datetime.now(datetime.timezone.utc)
         self.status = NotificationStatus.READ

@@ -1,6 +1,6 @@
 from typing import List
 
-from backend.application.use_cases import (
+from application.use_cases import (
     AssignIncidentUseCase,
     ChangeIncidentStatusUseCase,
     ChangeTaskStatusUseCase,
@@ -11,16 +11,16 @@ from backend.application.use_cases import (
     GetTasksUseCase,
     GetNotificationsUseCase,
 )
-from backend.domain.exceptions import InvalidStateTransitionError, NotFoundError, ValidationError
+from domain.exceptions import InvalidStateTransitionError, NotFoundError, ValidationError
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
-from backend.infrastructure.database import get_db
-from backend.infrastructure.models import UserORM
-from backend.infrastructure.auth_provider import AuthProvider
-from backend.domain.entities import User
-from backend.domain.enums import Role
-from backend.api.dependencies import (
+from infrastructure.database import get_db
+from infrastructure.models import UserORM
+from infrastructure.auth_provider import AuthProvider
+from domain.entities import User
+from domain.enums import Role
+from api.dependencies import (
     get_assign_incident_uc,
     get_change_incident_status_uc,
     get_change_task_status_uc,
@@ -33,8 +33,8 @@ from backend.api.dependencies import (
     get_notifications_uc,
     get_mark_notification_as_read_uc,
 )
-from backend.api.guards import require_any_role, require_role
-from backend.application.dtos import (
+from api.guards import require_any_role, require_role
+from application.dtos import (
     AssignIncidentDTO,
     ChangeStatusDTO,
     CreateIncidentDTO,
