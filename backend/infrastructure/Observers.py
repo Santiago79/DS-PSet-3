@@ -11,6 +11,7 @@ from backend.domain.events import (
 )
 from backend.domain.entities import Notification
 from backend.domain.enums import NotificationStatus
+from backend.domain.factories import get_notification_factory
 
 
 # ============================================
@@ -20,7 +21,8 @@ from backend.domain.enums import NotificationStatus
 class NotificationObserver(ObservadorEvento):
     """
     Observador que genera notificaciones cuando ocurren eventos en el sistema.
-    Implementa el patrón Command para encapsular el envío de notificaciones.
+    Utiliza el Abstract Factory Pattern para crear comandos específicos
+    según el tipo de evento (Incident o Task).
     """
     
     def __init__(self, notification_repo):
@@ -31,80 +33,62 @@ class NotificationObserver(ObservadorEvento):
         self.notification_repo = notification_repo
     
     def on_event(self, evento: Evento) -> None:
-        """Procesa un evento generando notificaciones apropiadas"""
+        """
+        Procesa un evento utilizando la factory correspondiente.
+        Obtiene la factory según el tipo de evento y crea el comando apropiado.
+        """
+        try:
+            # Obtener la factory correcta según el tipo de evento
+            factory = get_notification_factory(evento)
+            
+            # Determinar el destinatario según el tipo de evento
+            recipient = self._get_recipient(evento)
+            
+            if recipient:
+                # Crear y ejecutar el comando usando la factory
+                command = factory.create_command(
+                    notification_repo=self.notification_repo,
+                    evento=evento,
+                    channel="in_app",
+                    user_id=recipient,
+                )
+                command.execute()
         
+        except Exception as e:
+            # Log del error pero no propagar, para evitar fallos en el evento bus
+            logging.error(f"Error procesando evento para notificación: {str(e)}")
+    
+    def _get_recipient(self, evento: Evento) -> str:
+        """
+        Determina el usuario destinatario según el tipo de evento.
+        
+        Args:
+            evento: Evento de dominio
+        
+        Returns:
+            str: ID del usuario destinatario, o None si no aplica
+        """
         if isinstance(evento, IncidentCreatedEvent):
-            self._handle_incident_created(evento)
+            # Notificar al creador del incidente
+            return evento.incident.created_by
         
         elif isinstance(evento, IncidentAssignedEvent):
-            self._handle_incident_assigned(evento)
+            # Notificar al usuario asignado
+            return evento.assigned_to
         
         elif isinstance(evento, IncidentStatusChangedEvent):
-            self._handle_incident_status_changed(evento)
+            # Notificar al usuario asignado si existe
+            return evento.incident.assigned_to
         
         elif isinstance(evento, TaskCreatedEvent):
-            self._handle_task_created(evento)
+            # Notificar al usuario asignado si existe
+            return evento.task.assigned_to
         
         elif isinstance(evento, TaskDoneEvent):
-            self._handle_task_done(evento)
-    
-    def _handle_incident_created(self, evento: IncidentCreatedEvent) -> None:
-        """Genera notificación cuando se crea un incidente"""
-        notification = Notification(
-            recipient=evento.incident.created_by,
-            channel="in_app",
-            message=f"Incidente creado: {evento.incident.title}",
-            event_type="INCIDENT_CREATED",
-            status=NotificationStatus.PENDING
-        )
-        self.notification_repo.save(notification)
-    
-    def _handle_incident_assigned(self, evento: IncidentAssignedEvent) -> None:
-        """Genera notificación cuando se asigna un incidente"""
-        notification = Notification(
-            recipient=evento.assigned_to,
-            channel="in_app",
-            message=f"Se te ha asignado un incidente: {evento.incident.title}",
-            event_type="INCIDENT_ASSIGNED",
-            status=NotificationStatus.PENDING
-        )
-        self.notification_repo.save(notification)
-    
-    def _handle_incident_status_changed(self, evento: IncidentStatusChangedEvent) -> None:
-        """Genera notificación cuando cambia el estado de un incidente"""
-        if evento.incident.assigned_to:
-            notification = Notification(
-                recipient=evento.incident.assigned_to,
-                channel="in_app",
-                message=f"Incidente {evento.incident.title}: {evento.old_status} → {evento.new_status}",
-                event_type="INCIDENT_STATUS_CHANGED",
-                status=NotificationStatus.PENDING
-            )
-            self.notification_repo.save(notification)
-    
-    def _handle_task_created(self, evento: TaskCreatedEvent) -> None:
-        """Genera notificación cuando se crea una tarea"""
-        if evento.task.assigned_to:
-            notification = Notification(
-                recipient=evento.task.assigned_to,
-                channel="in_app",
-                message=f"Nueva tarea asignada: {evento.task.title}",
-                event_type="TASK_CREATED",
-                status=NotificationStatus.PENDING
-            )
-            self.notification_repo.save(notification)
-    
-    def _handle_task_done(self, evento: TaskDoneEvent) -> None:
-        """Genera notificación cuando se completa una tarea"""
-        # Notificar al creador/supervisor que una tarea fue completada
-        notification = Notification(
-            recipient=evento.task.assigned_to,
-            channel="in_app",
-            message=f"Tarea completada: {evento.task.title}",
-            event_type="TASK_DONE",
-            status=NotificationStatus.PENDING
-        )
-        self.notification_repo.save(notification)
+            # Notificar al usuario asignado
+            return evento.task.assigned_to
+        
+        return None
 
 
 # ============================================

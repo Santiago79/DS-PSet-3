@@ -1,8 +1,12 @@
 """
 Factory Pattern para la creación centralizada de Incidentes y Tareas.
 Centraliza validaciones de negocio y asegura que las entidades se creen en estado válido.
+
+Además implementa Abstract Factory Pattern para crear familias de objetos
+de notificación según el tipo de evento (Incident o Task).
 """
 
+from abc import ABC, abstractmethod
 from uuid import uuid4
 from datetime import datetime
 from typing import Optional, TYPE_CHECKING
@@ -10,9 +14,18 @@ from typing import Optional, TYPE_CHECKING
 from backend.domain.entities import Incident, Task, Notification
 from backend.domain.enums import Severity, IncidentStatus, TaskStatus, NotificationStatus, NotificationChannel
 from backend.domain.exceptions import ValidationError
-from backend.domain.events import Evento
+from backend.domain.events import (
+    Evento,
+    IncidentCreatedEvent,
+    IncidentAssignedEvent,
+    IncidentStatusChangedEvent,
+    TaskCreatedEvent,
+    TaskDoneEvent,
+)
 
 if TYPE_CHECKING:
+    from backend.domain.commands import NotificationCommand
+    from backend.domain.templates import NotificationMessageBuilder
     from backend.domain.repositories import NotificationRepository
 
 
@@ -123,89 +136,200 @@ class TaskFactory:
 
 
 # ============================================
-# NotificationCommandFactory
+# Abstract Factory Pattern para Notificaciones
 # ============================================
 
-class NotificationCommandFactory:
+class NotificationFactory(ABC):
     """
-    Factory para crear los comandos apropiados según el canal de notificación.
-    Centraliza la creación de comandos y facilita su extensión.
+    Clase abstracta que implementa el patrón Abstract Factory.
+    Define la interfaz para crear familias de objetos de notificación
+    (comandos y message builders) según el tipo de evento.
     """
     
-    @staticmethod
+    @abstractmethod
     def create_command(
-        channel: str,
+        self,
         notification_repo: "NotificationRepository",
         evento: Evento,
         **kwargs,
-    ):
+    ) -> "NotificationCommand":
         """
-        Crea un comando de notificación según el canal especificado.
+        Crea un comando de notificación específico para este tipo de evento.
         
         Args:
-            channel: Canal de notificación ("email", "in_app", "sms", etc.)
             notification_repo: Repositorio para persistir notificaciones
             evento: Evento de dominio que genera la notificación
-            **kwargs: Parámetros específicos für each channel
-                - Para EMAIL: recipient
-                - Para IN_APP: user_id
+            **kwargs: Parámetros específicos (recipient, user_id, etc.)
         
         Returns:
-            NotificationCommand: Comando apropiado para el canal
+            NotificationCommand: Comando creado
+        """
+        pass
+    
+    @abstractmethod
+    def create_message_builder(self) -> "NotificationMessageBuilder":
+        """
+        Crea un message builder específico para este tipo de evento.
         
+        Returns:
+            NotificationMessageBuilder: Builder para construir el mensaje
+        """
+        pass
+
+
+class IncidentNotificationFactory(NotificationFactory):
+    """
+    Factory concreta para crear objetos de notificación relacionados con Incidentes.
+    Crea comandos y message builders específicos para eventos de Incident.
+    """
+    
+    def create_command(
+        self,
+        notification_repo: "NotificationRepository",
+        evento: Evento,
+        **kwargs,
+    ) -> "NotificationCommand":
+        """
+        Crea un comando de notificación para eventos de Incident.
+        
+        Args:
+            notification_repo: Repositorio para persistir notificaciones
+            evento: Evento de Incident (IncidentCreatedEvent, IncidentAssignedEvent, etc.)
+            **kwargs: Parámetros específicos (channel, recipient/user_id)
+        
+        Returns:
+            NotificationCommand: Comando para enviar la notificación
+            
         Raises:
             ValueError: Si el canal no es soportado o faltan parámetros
         """
-        # Importar aquí para evitar circular imports
         from backend.domain.commands import EmailNotificationCommand, InAppNotificationCommand
         
+        # Validar que es un evento de Incident
+        if not isinstance(evento, (IncidentCreatedEvent, IncidentAssignedEvent, IncidentStatusChangedEvent)):
+            raise ValueError(f"Evento no es de tipo Incident: {type(evento)}")
+        
+        channel = kwargs.get("channel", NotificationChannel.IN_APP.value)
+        
         if channel == NotificationChannel.EMAIL.value:
-            return NotificationCommandFactory._create_email_command(
-                notification_repo, evento, kwargs, EmailNotificationCommand
+            recipient = kwargs.get("recipient")
+            if not recipient:
+                raise ValueError("Parámetro 'recipient' requerido para EMAIL")
+            
+            return EmailNotificationCommand(
+                notification_repo=notification_repo,
+                recipient=recipient,
+                evento=evento,
             )
         
         elif channel == NotificationChannel.IN_APP.value:
-            return NotificationCommandFactory._create_in_app_command(
-                notification_repo, evento, kwargs, InAppNotificationCommand
+            user_id = kwargs.get("user_id")
+            if not user_id:
+                raise ValueError("Parámetro 'user_id' requerido para IN_APP")
+            
+            return InAppNotificationCommand(
+                notification_repo=notification_repo,
+                user_id=user_id,
+                evento=evento,
             )
         
         else:
-            raise ValueError(f"Canal de notificación no soportado: {channel}")
+            raise ValueError(f"Canal no soportado para Incident: {channel}")
     
-    @staticmethod
-    def _create_email_command(
+    def create_message_builder(self) -> "NotificationMessageBuilder":
+        """Retorna el builder para mensajes de Incident"""
+        from backend.domain.templates import EmailMessageBuilder
+        
+        # Por defecto retorna EmailMessageBuilder (puede adaptarse según lógica)
+        return EmailMessageBuilder()
+
+
+class TaskNotificationFactory(NotificationFactory):
+    """
+    Factory concreta para crear objetos de notificación relacionados con Tareas.
+    Crea comandos y message builders específicos para eventos de Task.
+    """
+    
+    def create_command(
+        self,
         notification_repo: "NotificationRepository",
         evento: Evento,
-        kwargs: dict,
-        EmailNotificationCommand,
-    ):
-        """Crea un comando de email con validación de parámetros"""
-        required_params = ["recipient"]
-        for param in required_params:
-            if param not in kwargs:
-                raise ValueError(f"Parámetro requerido faltante para EMAIL: {param}")
+        **kwargs,
+    ) -> "NotificationCommand":
+        """
+        Crea un comando de notificación para eventos de Task.
         
-        return EmailNotificationCommand(
-            notification_repo=notification_repo,
-            recipient=kwargs["recipient"],
-            evento=evento,
-        )
+        Args:
+            notification_repo: Repositorio para persistir notificaciones
+            evento: Evento de Task (TaskCreatedEvent, TaskDoneEvent)
+            **kwargs: Parámetros específicos (channel, recipient/user_id)
+        
+        Returns:
+            NotificationCommand: Comando para enviar la notificación
+            
+        Raises:
+            ValueError: Si el canal no es soportado o faltan parámetros
+        """
+        from backend.domain.commands import EmailNotificationCommand, InAppNotificationCommand
+        
+        # Validar que es un evento de Task
+        if not isinstance(evento, (TaskCreatedEvent, TaskDoneEvent)):
+            raise ValueError(f"Evento no es de tipo Task: {type(evento)}")
+        
+        channel = kwargs.get("channel", NotificationChannel.IN_APP.value)
+        
+        if channel == NotificationChannel.EMAIL.value:
+            recipient = kwargs.get("recipient")
+            if not recipient:
+                raise ValueError("Parámetro 'recipient' requerido para EMAIL")
+            
+            return EmailNotificationCommand(
+                notification_repo=notification_repo,
+                recipient=recipient,
+                evento=evento,
+            )
+        
+        elif channel == NotificationChannel.IN_APP.value:
+            user_id = kwargs.get("user_id")
+            if not user_id:
+                raise ValueError("Parámetro 'user_id' requerido para IN_APP")
+            
+            return InAppNotificationCommand(
+                notification_repo=notification_repo,
+                user_id=user_id,
+                evento=evento,
+            )
+        
+        else:
+            raise ValueError(f"Canal no soportado para Task: {channel}")
     
-    @staticmethod
-    def _create_in_app_command(
-        notification_repo: "NotificationRepository",
-        evento: Evento,
-        kwargs: dict,
-        InAppNotificationCommand,
-    ):
-        """Crea un comando in-app con validación de parámetros"""
-        required_params = ["user_id"]
-        for param in required_params:
-            if param not in kwargs:
-                raise ValueError(f"Parámetro requerido faltante para IN_APP: {param}")
+    def create_message_builder(self) -> "NotificationMessageBuilder":
+        """Retorna el builder para mensajes de Task"""
+        from backend.domain.templates import InAppMessageBuilder
         
-        return InAppNotificationCommand(
-            notification_repo=notification_repo,
-            user_id=kwargs["user_id"],
-            evento=evento,
-        )
+        # Por defecto retorna InAppMessageBuilder (puede adaptarse según lógica)
+        return InAppMessageBuilder()
+
+
+# Factory helper para obtener la factory correcta según el tipo de evento
+def get_notification_factory(evento: Evento) -> NotificationFactory:
+    """
+    Retorna la factory apropiada según el tipo de evento.
+    
+    Args:
+        evento: Evento de dominio
+    
+    Returns:
+        NotificationFactory: Factory correspondiente al tipo de evento
+        
+    Raises:
+        ValueError: Si el tipo de evento no es reconocido
+    """
+    if isinstance(evento, (IncidentCreatedEvent, IncidentAssignedEvent, IncidentStatusChangedEvent)):
+        return IncidentNotificationFactory()
+    
+    elif isinstance(evento, (TaskCreatedEvent, TaskDoneEvent)):
+        return TaskNotificationFactory()
+    
+    else:
+        raise ValueError(f"Tipo de evento no reconocido para notificaciones: {type(evento)}")
