@@ -87,6 +87,7 @@ def _render_app():
     with st.sidebar:
         st.title("🛡️ OpsCenter")
         st.write(f"👤 **{user.get('name')}**")
+        st.markdown(f"**{user.get('id')}**")
         st.caption(f"Rol: {role}")
         st.divider()
         

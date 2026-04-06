@@ -110,6 +110,12 @@ class PostgresIncidentRepo:
             updated_at=model.updated_at,
             _status=IncidentStatus(model.status)
         )
+    def get_operational(self, skip: int = 0, limit: int = 100) -> List[Incident]:
+        """Obtiene incidentes operativos (excluye RESOLVED y CLOSED)"""
+        models = self.session.query(IncidentORM).filter(
+            IncidentORM.status.notin_(["RESOLVED", "CLOSED"])
+        ).offset(skip).limit(limit).all()
+        return [self._to_domain(model) for model in models]
 
 
 # ============================================
