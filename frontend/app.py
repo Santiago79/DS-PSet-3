@@ -13,6 +13,7 @@ from api_client import (
 
 from views.notifications import show_notification_list
 from views.tasks import show_task_list
+from views.incidents import show_incident_list, show_create_incident_form  
 
 st.set_page_config(
     page_title="OpsCenter",
@@ -36,6 +37,7 @@ def _nav_entries(role: str | None) -> list[tuple[str, str]]:
     # (etiqueta visible, clave interna). La autorización la aplica el backend
     base = [
         ("Incidentes", "incidents"),
+        ("Crear Incidente", "create_incident"),
         ("Mis Tareas", "tasks"),
         ("Notificaciones", "notifications"),
     ]
@@ -295,6 +297,8 @@ def _render_app() -> None:
 
     if page_key == "incidents":
         _page_incidents_list("Incidentes")
+    elif page_key == "create_incident":  
+        st.header("Crear nuevo incidente")   
     elif page_key == "all_incidents":
         _page_incidents_list("Todos los incidentes")
     elif page_key == "tasks":
