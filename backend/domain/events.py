@@ -5,7 +5,7 @@ Los eventos se publican cuando ocurren cambios importantes en el negocio.
 
 from abc import ABC
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 @dataclass(kw_only=True)
 class Evento(ABC):
     """Clase base abstracta para todos los eventos del dominio"""
-    occurred_at: datetime = field(default_factory=datetime.utcnow)
+    occurred_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # ============================================

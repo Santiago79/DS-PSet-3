@@ -1,4 +1,9 @@
 from fastapi import FastAPI
+from infrastructure import models
+from infrastructure.database import engine, Base, SessionLocal
+from infrastructure.Observers import NotificationObserver, LoggingObserver
+from api.dependencies import get_event_bus
+from api.endpoints import router as api_router
 from datetime import datetime
 
 # Importaciones de infraestructura y base de datos (sin el prefijo backend.)
@@ -14,11 +19,8 @@ from api.endpoints import router as api_router
 # Crear tablas en la base de datos al arrancar
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(
-    title="OpsCenter API",
-    description="Backend para el sistema de gestión de incidentes - PSet 3",
-    version="1.0.0"
-)
+app = FastAPI(title="OpsCenter API")
+app.include_router(api_router)
 
 # REGISTRO DE RUTAS: Esto es lo que hace que aparezcan en /docs y funcionen en la UI
 app.include_router(api_router)

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from domain.exceptions import InvalidStateTransitionError, ValidationError
 from domain.states import IncidentState
@@ -34,8 +34,8 @@ class Incident:
     id: str = field(default_factory=lambda: str(uuid4()))
     _status: IncidentStatus = field(default=IncidentStatus.OPEN)
     assigned_to: Optional[str] = None
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     _state: Optional[IncidentState] = field(default=None, init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -70,27 +70,27 @@ class Incident:
         Delega en el estado actual la lógica de asignación.
         """
         self.state.assign(self, user_id)
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
 
     def start_progress(self) -> None:
         """Marca el incidente como en progreso"""
         self.state.start_progress(self)
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
 
     def resolve(self) -> None:
         """Resuelve el incidente"""
         self.state.resolve(self)
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
 
     def close(self) -> None:
         """Cierra el incidente"""
         self.state.close(self)
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
 
     def reopen(self) -> None:
         """Reabre el incidente"""
         self.state.reopen(self)
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
 
     def _transition_to(self, new_status: IncidentStatus) -> None:
         """
@@ -99,7 +99,7 @@ class Incident:
         """
         self._status = new_status
         self._state = None  # Forzar recarga del nuevo estado
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
 
 @dataclass
 class Task:
@@ -112,8 +112,8 @@ class Task:
     id: str = field(default_factory=lambda: str(uuid4()))
     _status: TaskStatus = field(default=TaskStatus.OPEN)
     assigned_to: Optional[str] = None
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def __post_init__(self) -> None:
         if not self.title or len(self.title.strip()) < 3:
@@ -128,7 +128,7 @@ class Task:
     def assign_to(self, user_id: str) -> None:
         """Asigna la tarea a un usuario"""
         self.assigned_to = user_id
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
 
     def mark_in_progress(self) -> None:
         """Marca la tarea como en progreso"""
@@ -137,7 +137,7 @@ class Task:
                 f"No se puede iniciar una tarea en estado {self._status.value}"
             )
         self._status = TaskStatus.IN_PROGRESS
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
 
     def mark_done(self) -> None:
         """Marca la tarea como completada"""
@@ -148,7 +148,7 @@ class Task:
                 f"No se puede completar una tarea en estado {self._status.value}"
             )
         self._status = TaskStatus.DONE
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
 
 @dataclass
 class Notification:
@@ -162,7 +162,7 @@ class Notification:
     event_type: str
     id: str = field(default_factory=lambda: str(uuid4()))
     status: NotificationStatus = field(default=NotificationStatus.PENDING)
-    created_at: datetime = field(default_factory=datetime.now)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     read_at: Optional[datetime] = field(default=None)
 
     def __post_init__(self) -> None:
@@ -175,5 +175,5 @@ class Notification:
 
     def mark_as_read(self) -> None:
         """Registra la lectura de la notificación"""
-        self.read_at = datetime.now(datetime.timezone.utc)
+        self.read_at = datetime.now(timezone.utc)
         self.status = NotificationStatus.READ

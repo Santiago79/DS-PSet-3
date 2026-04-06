@@ -4,7 +4,6 @@ import os
 import requests
 from typing import Any, Dict, List, Optional
 
-
 DEFAULT_BASE_URL = "http://127.0.0.1:8000"
 
 
@@ -141,11 +140,55 @@ def update_task_status(token: str, task_id: str, status: str) -> Dict[str, Any]:
     return result
 
 
-def get_notifications(token: str) -> List[Dict[str, Any]]:
-    # Notificaciones del usuario. Si el endpoint aún no existe (404), devuelve lista vacía
-    result = _request_json("GET", "/notifications", token=token, allow_404=True)
+def get_notifications(
+    token: str,
+    *,
+    unread_only: bool = False,
+) -> List[Dict[str, Any]]:
+    # GET /notifications — filtro unread_only según query de la API
+    params: Optional[Dict[str, Any]] = None
+    if unread_only:
+        params = {"unread_only": "true"}
+    result = _request_json(
+        "GET",
+        "/notifications",
+        token=token,
+        params=params,
+        allow_404=True,
+    )
     if result is None:
         return []
     if not isinstance(result, list):
         raise ApiError("Respuesta de notificaciones inválida")
+    return result
+
+
+def assign_incident(token: str, incident_id: str, assigned_to: str) -> Dict[str, Any]:
+    result = _request_json(
+        "PATCH",
+        f"/incidents/{incident_id}/assign",
+        token=token,
+        json_body={"assigned_to": assigned_to},
+    )
+    if not isinstance(result, dict):
+        raise ApiError("Respuesta de asignación inválida")
+    return result
+
+
+def update_incident_status(token: str, incident_id: str, status: str) -> Dict[str, Any]:
+    result = _request_json(
+        "PATCH",
+        f"/incidents/{incident_id}/status",
+        token=token,
+        json_body={"status": status},
+    )
+    if not isinstance(result, dict):
+        raise ApiError("Respuesta de cambio de estado inválida")
+    return result
+
+
+def create_task(token: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    result = _request_json("POST", "/tasks", token=token, json_body=data)
+    if not isinstance(result, dict):
+        raise ApiError("Respuesta de creación de tarea inválida")
     return result

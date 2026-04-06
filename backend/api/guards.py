@@ -12,8 +12,9 @@ def require_role(required_role: Role):
         # Definimos la jerarquía de permisos
         hierarchy = {
             Role.ADMIN: [Role.ADMIN, Role.SUPERVISOR, Role.OPERATOR],
-            Role.SUPERVISOR: [Role.SUPERVISOR, Role.OPERATOR],
-            Role.OPERATOR: [Role.OPERATOR]
+            # Quien requiere nivel SUPERVISOR incluye a ADMIN (mayor privilegio).
+            Role.SUPERVISOR: [Role.ADMIN, Role.SUPERVISOR, Role.OPERATOR],
+            Role.OPERATOR: [Role.OPERATOR],
         }
         
         # Obtenemos los roles permitidos para el nivel requerido
