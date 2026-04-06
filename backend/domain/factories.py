@@ -10,6 +10,7 @@ from typing import Optional, TYPE_CHECKING
 from domain.entities import Incident, Task, Notification
 from domain.enums import Severity, IncidentStatus, TaskStatus, NotificationStatus, NotificationChannel
 from domain.exceptions import ValidationError
+from domain.events import Evento
 
 if TYPE_CHECKING:
     from domain.commands import EmailNotificationCommand, InAppNotificationCommand
@@ -136,6 +137,7 @@ class NotificationCommandFactory:
     def create_command(
         channel: str,
         notification_repo: "NotificationRepository",
+        evento: Evento,
         **kwargs,
     ):
         """
@@ -144,9 +146,10 @@ class NotificationCommandFactory:
         Args:
             channel: Canal de notificación ("email", "in_app", "sms", etc.)
             notification_repo: Repositorio para persistir notificaciones
+            evento: Evento de dominio que genera la notificación
             **kwargs: Parámetros específicos für each channel
-                - Para EMAIL: recipient, subject, body
-                - Para IN_APP: user_id, message
+                - Para EMAIL: recipient
+                - Para IN_APP: user_id
         
         Returns:
             NotificationCommand: Comando apropiado para el canal
@@ -159,12 +162,12 @@ class NotificationCommandFactory:
         
         if channel == NotificationChannel.EMAIL.value:
             return NotificationCommandFactory._create_email_command(
-                notification_repo, kwargs, EmailNotificationCommand
+                notification_repo, evento, kwargs, EmailNotificationCommand
             )
         
         elif channel == NotificationChannel.IN_APP.value:
             return NotificationCommandFactory._create_in_app_command(
-                notification_repo, kwargs, InAppNotificationCommand
+                notification_repo, evento, kwargs, InAppNotificationCommand
             )
         
         else:
@@ -173,11 +176,12 @@ class NotificationCommandFactory:
     @staticmethod
     def _create_email_command(
         notification_repo: "NotificationRepository",
+        evento: Evento,
         kwargs: dict,
         EmailNotificationCommand,
     ):
         """Crea un comando de email con validación de parámetros"""
-        required_params = ["recipient", "subject", "body"]
+        required_params = ["recipient"]
         for param in required_params:
             if param not in kwargs:
                 raise ValueError(f"Parámetro requerido faltante para EMAIL: {param}")
@@ -185,18 +189,18 @@ class NotificationCommandFactory:
         return EmailNotificationCommand(
             notification_repo=notification_repo,
             recipient=kwargs["recipient"],
-            subject=kwargs["subject"],
-            body=kwargs["body"],
+            evento=evento,
         )
     
     @staticmethod
     def _create_in_app_command(
         notification_repo: "NotificationRepository",
+        evento: Evento,
         kwargs: dict,
         InAppNotificationCommand,
     ):
         """Crea un comando in-app con validación de parámetros"""
-        required_params = ["user_id", "message"]
+        required_params = ["user_id"]
         for param in required_params:
             if param not in kwargs:
                 raise ValueError(f"Parámetro requerido faltante para IN_APP: {param}")
@@ -204,5 +208,5 @@ class NotificationCommandFactory:
         return InAppNotificationCommand(
             notification_repo=notification_repo,
             user_id=kwargs["user_id"],
-            message=kwargs["message"],
+            evento=evento,
         )
