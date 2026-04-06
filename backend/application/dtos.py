@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 
 # ============================================
@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, field_validator
 # ============================================
 
 class UserResponseDTO(BaseModel):
+    """DTO para respuesta de usuario autenticado"""
     id: str
     name: str
     email: str
@@ -15,24 +16,19 @@ class UserResponseDTO(BaseModel):
 
 
 class LoginRequestDTO(BaseModel):
-    email: str = Field(description="Correo electrónico del usuario")
-    password: str = Field(min_length=1, description="Contraseña del usuario")
-
-    @field_validator("email")
-    @classmethod
-    def validate_email(cls, v: str) -> str:
-        if not v or "@" not in v or "." not in v.split("@")[-1]:
-            raise ValueError("Formato de correo electrónico inválido")
-        return v.strip().lower()
+    """DTO para solicitud de login"""
+    email: str
+    password: str
 
 
 class LoginResponseDTO(BaseModel):
+    """DTO para respuesta de login"""
     access_token: str
     token_type: str = "bearer"
 
 
 # ============================================
-# DTOs de Tarea 
+# DTOs de Tarea (definido PRIMERO para evitar referencia circular)
 # ============================================
 
 class TaskResponseDTO(BaseModel):
@@ -49,50 +45,21 @@ class TaskResponseDTO(BaseModel):
 
 class CreateTaskDTO(BaseModel):
     """DTO para crear una tarea"""
-    incident_id: str = Field(min_length=1, description="ID del incidente asociado")
-    title: str = Field(min_length=3, max_length=200, description="Título de la tarea")
-    description: str = Field(description="Descripción de la tarea")
-    assigned_to: Optional[str] = Field(None, description="ID del usuario asignado")
-
-    @field_validator("title")
-    @classmethod
-    def validate_title(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("El título no puede estar vacío")
-        return v.strip()
+    incident_id: str
+    title: str
+    description: str
+    assigned_to: Optional[str] = None
 
 
 # ============================================
-# DTOs de Incidente 
+# DTOs de Incidente
 # ============================================
 
 class CreateIncidentDTO(BaseModel):
     """DTO para crear un incidente"""
-    title: str = Field(min_length=3, max_length=200, description="Título del incidente")
-    description: str = Field(min_length=5, description="Descripción del incidente")
-    severity: str = Field(description="Severidad: LOW, MEDIUM, HIGH, CRITICAL")
-
-    @field_validator("severity")
-    @classmethod
-    def validate_severity(cls, v: str) -> str:
-        allowed = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
-        if v not in allowed:
-            raise ValueError(f"Severidad debe ser uno de: {allowed}")
-        return v
-
-    @field_validator("title")
-    @classmethod
-    def validate_title(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("El título no puede estar vacío")
-        return v.strip()
-
-    @field_validator("description")
-    @classmethod
-    def validate_description(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("La descripción no puede estar vacía")
-        return v.strip()
+    title: str
+    description: str
+    severity: str  # "LOW", "MEDIUM", "HIGH", "CRITICAL"
 
 
 class IncidentResponseDTO(BaseModel):
@@ -106,25 +73,17 @@ class IncidentResponseDTO(BaseModel):
     assigned_to: Optional[str] = None
     created_at: datetime
     updated_at: datetime
-    tasks: List[TaskResponseDTO] = [] 
+    tasks: List[TaskResponseDTO] = []  # TaskResponseDTO ya existe
 
 
 class AssignIncidentDTO(BaseModel):
     """DTO para asignar un incidente"""
-    assigned_to: str = Field(min_length=1, description="ID del usuario asignado")
+    assigned_to: str
 
 
 class ChangeStatusDTO(BaseModel):
     """DTO para cambiar estado"""
-    status: str = Field(description="Nuevo estado: OPEN, ASSIGNED, IN_PROGRESS, RESOLVED, CLOSED")
-
-    @field_validator("status")
-    @classmethod
-    def validate_status(cls, v: str) -> str:
-        allowed = ["OPEN", "ASSIGNED", "IN_PROGRESS", "RESOLVED", "CLOSED"]
-        if v not in allowed:
-            raise ValueError(f"Estado debe ser uno de: {allowed}")
-        return v
+    status: str  # OPEN, ASSIGNED, IN_PROGRESS, RESOLVED, CLOSED
 
 
 # ============================================
@@ -145,4 +104,4 @@ class NotificationResponseDTO(BaseModel):
 
 class MarkNotificationReadDTO(BaseModel):
     """DTO para marcar una notificación como leída"""
-    notification_id: str = Field(min_length=1, description="ID de la notificación a marcar como leída")
+    notification_id: str
