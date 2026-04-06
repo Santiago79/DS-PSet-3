@@ -102,8 +102,11 @@ def _sidebar_user() -> None:
     user = st.session_state.get(SESSION_USER) or {}
     name = user.get("name") or "—"
     role = user.get("role") or "—"
+    user_id = user.get("id") or "—"  # ← Agregar
     st.markdown("**Usuario**")
     st.write(name)
+    st.markdown("**ID**")  # ← Agregar
+    st.write(user_id)      # ← Agregar
     st.markdown("**Rol**")
     st.write(role)
     st.divider()
@@ -298,7 +301,8 @@ def _render_app() -> None:
     if page_key == "incidents":
         _page_incidents_list("Incidentes")
     elif page_key == "create_incident":  
-        st.header("Crear nuevo incidente")   
+        st.header("Crear nuevo incidente")
+        show_create_incident_form()  
     elif page_key == "all_incidents":
         _page_incidents_list("Todos los incidentes")
     elif page_key == "tasks":

@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import streamlit as st
 
-from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from api_client import ApiError, create_incident, get_incident, get_incidents
@@ -28,11 +29,6 @@ def _fmt_dt(value: Any) -> str:
 
 
 def show_incident_list() -> None:
-    """
-    Tabla con título, severidad, estado y fecha.
-    OPERATOR: la API devuelve solo incidentes creados o asignados a él.
-    SUPERVISOR y ADMIN: la API devuelve todos los incidentes.
-    """
     token = _token()
     if not token:
         st.warning("Sesión no válida.")
@@ -40,9 +36,7 @@ def show_incident_list() -> None:
 
     role = _user_role()
     if role == "OPERATOR":
-        st.caption(
-            "Como operador solo ves incidentes que creaste o que te fueron asignados."
-        )
+        st.caption("Como operador solo ves incidentes que creaste o que te fueron asignados.")
     elif role in ("SUPERVISOR", "ADMIN"):
         st.caption("Como supervisor o administrador ves todos los incidentes del sistema.")
 
@@ -56,48 +50,32 @@ def show_incident_list() -> None:
         st.info("No hay incidentes para mostrar.")
         return
 
-    slim: List[Dict[str, Any]] = []
-    for r in rows:
-        slim.append(
-            {
-                "title": r.get("title"),
-                "severity": r.get("severity"),
-                "status": r.get("status"),
-                "fecha": _fmt_dt(r.get("created_at")),
-            }
-        )
-
     st.subheader("Listado de incidentes")
-    st.dataframe(
-        slim,
-        use_container_width=True,
-        hide_index=True,
-        column_config={
-            "title": st.column_config.TextColumn("Título", width="large"),
-            "severity": "Severidad",
-            "status": "Estado",
-            "fecha": "Fecha",
-        },
-    )
 
-    def _label(inc_id: str) -> str:
-        for r in rows:
-            if r.get("id") == inc_id:
-                t = (r.get("title") or "")[:100]
-                return t if t else str(inc_id)
-        return str(inc_id)
-
-    selected = st.selectbox(
-        "Ver detalle de",
-        options=[r["id"] for r in rows],
-        format_func=_label,
-        key="incident_detail_select",
-    )
-    if selected:
-        st.divider()
-        show_incident_detail(selected)
-
-
+    # 🔽 CAMBIO IMPORTANTE: Cada incidente es un expander clickeable
+    for r in rows:
+        with st.expander(f"📌 {r.get('title')} — Estado: {r.get('status')} — Severidad: {r.get('severity')}"):
+            # Esto se muestra al hacer click en el expander
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown(f"**Descripción:** {r.get('description', '—')}")
+                st.markdown(f"**Creado por:** {r.get('created_by', '—')}")
+            with col2:
+                st.markdown(f"**Asignado a:** {r.get('assigned_to') or '—'}")
+                st.markdown(f"**Creado:** {_fmt_dt(r.get('created_at'))}")
+            
+            # Mostrar tareas asociadas
+            tasks = r.get('tasks', [])
+            if tasks:
+                st.markdown("**Tareas asociadas:**")
+                task_data = [
+                    {"Título": t.get('title'), "Estado": t.get('status'), "Asignado": t.get('assigned_to') or '—'}
+                    for t in tasks
+                ]
+                st.dataframe(task_data, use_container_width=True, hide_index=True)
+            else:
+                st.write("No hay tareas asociadas.")
+                
 def show_incident_detail(incident_id: str) -> None:
     #Vista detallada del incidente y tabla de tareas asociadas
     token = _token()
