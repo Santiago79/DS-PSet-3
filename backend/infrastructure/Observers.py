@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
-from backend.domain.interfaces.observador_evento import ObservadorEvento
-from backend.domain.events import (
+from domain.interfaces.observador_evento import ObservadorEvento
+from domain.events import (
     Evento,
     IncidentCreatedEvent,
     IncidentAssignedEvent,
@@ -9,9 +9,9 @@ from backend.domain.events import (
     TaskCreatedEvent,
     TaskDoneEvent,
 )
-from backend.domain.entities import Notification
-from backend.domain.enums import NotificationStatus
-from backend.domain.factories import get_notification_factory
+from domain.entities import Notification
+from domain.enums import NotificationStatus
+from domain.factories import get_notification_factory
 
 
 # ============================================
