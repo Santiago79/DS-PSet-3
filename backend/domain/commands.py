@@ -104,8 +104,7 @@ class EmailNotificationCommand(NotificationCommand):
         # Aquí iría la lógica real de envío de email
         # Por ahora es un placeholder que simula envío exitoso
         pass
-        # Por ahora es un placeholder que simula envío exitoso
-        pass
+
 
 
 class InAppNotificationCommand(NotificationCommand):

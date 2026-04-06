@@ -7,14 +7,13 @@ from uuid import uuid4
 from datetime import datetime
 from typing import Optional, TYPE_CHECKING
 
-from domain.entities import Incident, Task, Notification
-from domain.enums import Severity, IncidentStatus, TaskStatus, NotificationStatus, NotificationChannel
-from domain.exceptions import ValidationError
-from domain.events import Evento
+from backend.domain.entities import Incident, Task, Notification
+from backend.domain.enums import Severity, IncidentStatus, TaskStatus, NotificationStatus, NotificationChannel
+from backend.domain.exceptions import ValidationError
+from backend.domain.events import Evento
 
 if TYPE_CHECKING:
-    from domain.commands import EmailNotificationCommand, InAppNotificationCommand
-    from domain.repositories import NotificationRepository
+    from backend.domain.repositories import NotificationRepository
 
 
 class IncidentFactory:
@@ -158,7 +157,7 @@ class NotificationCommandFactory:
             ValueError: Si el canal no es soportado o faltan parámetros
         """
         # Importar aquí para evitar circular imports
-        from domain.commands import EmailNotificationCommand, InAppNotificationCommand
+        from backend.domain.commands import EmailNotificationCommand, InAppNotificationCommand
         
         if channel == NotificationChannel.EMAIL.value:
             return NotificationCommandFactory._create_email_command(
