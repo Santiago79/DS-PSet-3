@@ -7,7 +7,7 @@ el formato específico para cada canal.
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from backend.domain.events import (
+from domain.events import (
     Evento,
     IncidentCreatedEvent,
     IncidentAssignedEvent,

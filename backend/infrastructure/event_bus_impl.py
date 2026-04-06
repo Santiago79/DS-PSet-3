@@ -4,9 +4,9 @@ Usa una lista simple de observadores para mantener el patrón Observable.
 """
 
 from typing import List
-from backend.domain.events import Evento
-from backend.domain.interfaces.event_bus import EventBus
-from backend.domain.interfaces.observador_evento import ObservadorEvento
+from domain.events import Evento
+from domain.interfaces.event_bus import EventBus
+from domain.interfaces.observador_evento import ObservadorEvento
 
 
 class InMemoryEventBus(EventBus):

@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Optional
-from backend.domain.exceptions import InvalidStateTransitionError, ValidationError
-from backend.domain.states import IncidentState
+from domain.exceptions import InvalidStateTransitionError, ValidationError
+from domain.states import IncidentState
 from domain.enums import IncidentStatus, Role, Severity, TaskStatus, NotificationStatus
 from uuid import uuid4
 

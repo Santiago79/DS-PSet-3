@@ -7,20 +7,20 @@ from uuid import uuid4
 from datetime import datetime
 from typing import List, Optional
 
-from backend.domain.entities import Incident, Task, Notification
-from backend.domain.enums import Severity, IncidentStatus, TaskStatus, NotificationStatus
-from backend.domain.exceptions import ValidationError, NotFoundError, InvalidStateTransitionError
-from backend.domain.factories import IncidentFactory, TaskFactory
-from backend.domain.repositories import IncidentRepository, TaskRepository
-from backend.domain.interfaces.event_bus import EventBus
-from backend.domain.events import (
+from domain.entities import Incident, Task, Notification
+from domain.enums import Severity, IncidentStatus, TaskStatus, NotificationStatus
+from domain.exceptions import ValidationError, NotFoundError, InvalidStateTransitionError
+from domain.factories import IncidentFactory, TaskFactory
+from domain.repositories import IncidentRepository, TaskRepository
+from domain.interfaces.event_bus import EventBus
+from domain.events import (
     IncidentCreatedEvent,
     IncidentAssignedEvent,
     IncidentStatusChangedEvent,
     TaskCreatedEvent,
     TaskDoneEvent,
 )
-from backend.application.dtos import (
+from application.dtos import (
     CreateIncidentDTO,
     IncidentResponseDTO,
     AssignIncidentDTO,

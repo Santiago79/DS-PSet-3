@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from backend.domain.entities import Incident, Task
+    from domain.entities import Incident, Task  # ¡Infiltrado 'backend.' eliminado!
 
 
 @dataclass(kw_only=True)
@@ -22,20 +22,20 @@ class Evento(ABC):
 # Eventos de Incidente
 # ============================================
 
-@dataclass
+@dataclass(kw_only=True)
 class IncidentCreatedEvent(Evento):
     """Evento: Un incidente fue creado"""
     incident: "Incident"
 
 
-@dataclass
+@dataclass(kw_only=True)
 class IncidentAssignedEvent(Evento):
     """Evento: Un incidente fue asignado a un usuario"""
     incident: "Incident"
     assigned_to: str  # user_id
 
 
-@dataclass
+@dataclass(kw_only=True)
 class IncidentStatusChangedEvent(Evento):
     """Evento: El estado de un incidente cambió"""
     incident: "Incident"
@@ -47,13 +47,13 @@ class IncidentStatusChangedEvent(Evento):
 # Eventos de Tarea
 # ============================================
 
-@dataclass
+@dataclass(kw_only=True)
 class TaskCreatedEvent(Evento):
     """Evento: Una tarea fue creada"""
     task: "Task"
 
 
-@dataclass
+@dataclass(kw_only=True)
 class TaskDoneEvent(Evento):
     """Evento: Una tarea fue completada"""
     task: "Task"

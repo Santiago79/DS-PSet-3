@@ -1,4 +1,4 @@
-from backend.application.use_cases import (
+from application.use_cases import (
     AssignIncidentUseCase,
     ChangeIncidentStatusUseCase,
     ChangeTaskStatusUseCase,
@@ -10,19 +10,19 @@ from backend.application.use_cases import (
     GetNotificationsUseCase,
     MarkNotificationAsReadUseCase,
 )
-from backend.infrastructure.postgres import PostgresIncidentRepo, PostgresTaskRepo, PostgresNotificationRepo
-from backend.infrastructure.event_bus_impl import InMemoryEventBus
-from backend.domain.interfaces.event_bus import EventBus
+from infrastructure.postgres import PostgresIncidentRepo, PostgresTaskRepo, PostgresNotificationRepo
+from infrastructure.event_bus_impl import InMemoryEventBus
+from domain.interfaces.event_bus import EventBus
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 
-from backend.infrastructure.database import get_db
-from backend.infrastructure.models import UserORM
-from backend.infrastructure.auth_provider import SECRET_KEY, ALGORITHM
-from backend.domain.entities import User
-from backend.domain.enums import Role
+from infrastructure.database import get_db
+from infrastructure.models import UserORM
+from infrastructure.auth_provider import SECRET_KEY, ALGORITHM
+from domain.entities import User
+from domain.enums import Role
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")

@@ -6,13 +6,13 @@ Cada comando representa una acción de envío por un canal específico.
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from backend.domain.entities import Notification
-from backend.domain.enums import NotificationStatus, NotificationChannel
-from backend.domain.events import Evento
-from backend.domain.templates import EmailMessageBuilder, InAppMessageBuilder
+from domain.entities import Notification
+from domain.enums import NotificationStatus, NotificationChannel
+from domain.events import Evento
+from domain.templates import EmailMessageBuilder, InAppMessageBuilder
 
 if TYPE_CHECKING:
-    from backend.domain.repositories import NotificationRepository
+    from domain.repositories import NotificationRepository
 
 
 # ============================================
