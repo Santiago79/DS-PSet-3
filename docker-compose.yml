@@ -21,8 +21,9 @@ services:
       - db
     environment:
       DATABASE_URL: postgresql://admin:password@db:5432/opscenter
+      PYTHONPATH: /app:/app/backend
     volumes:
-      - ./backend:/app
+      - ./backend:/app/backend
 
   ui:
     build:

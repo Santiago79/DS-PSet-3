@@ -3,10 +3,12 @@ from backend.infrastructure import models
 from backend.infrastructure.database import engine, Base, SessionLocal
 from backend.infrastructure.Observers import NotificationObserver, LoggingObserver
 from backend.api.dependencies import get_event_bus
+from backend.api.endpoints import router as api_router
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="OpsCenter API")
+app.include_router(api_router)
 
 
 def initialize_observers() -> None:
