@@ -167,6 +167,10 @@ class PostgresTaskRepo:
         models = self.session.query(TaskORM).filter(TaskORM.assigned_to == user_id).all()
         return [self._to_domain(model) for model in models]
     
+#    def get_by_assigned_to(self, user_id: str) -> List[Task]:
+#        models = self.session.query(TaskORM).filter(TaskORM.assigned_to == user_id).closed()
+#        return [self._to_domain(model) for model in models]
+    
     def get_all(self, skip: int = 0, limit: int = 100) -> List[Task]:
         """Obtiene todas las tareas con paginación para ADMIN y SUPERVISOR"""
         models = self.session.query(TaskORM).offset(skip).limit(limit).all()

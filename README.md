@@ -1,7 +1,9 @@
 # 🛡️ OpsCenter
 
-Plataforma interna de gestión de incidentes operativos para equipos fintech.
-Santiago Reátegui  -  María Emilia Cueva  -  Raymond Portilla - Liam Huang
+Plataforma interna de gestión de incidentes operativos para equipos fintech. 
+
+Santiago Reátegui - María Emilia Cueva - Raymond Portilla - Liam Huang
+
 ---
 
 ## 1. ¿Qué problema resuelve?
@@ -305,8 +307,7 @@ DS-PSet-3/
 │   │   ├── event_bus_impl.py         # InMemoryEventBus
 │   │   ├── Observers.py              # NotificationObserver, LoggingObserver
 │   │   ├── auth_provider.py          # JWT (jose) + bcrypt (passlib)
-│   │   ├── database.py               # Sesión SQLAlchemy
-│   │   └── notification_providers.py # Proveedores de canal
+│   │   └── database.py               # Sesión SQLAlchemy
 │   ├── api/
 │   │   ├── endpoints.py              # Rutas FastAPI
 │   │   ├── guards.py                 # require_role, require_any_role
@@ -324,9 +325,9 @@ DS-PSet-3/
 │   ├── Dockerfile
 │   └── requirements.txt
 ├── docs/
-│   ├── use_case_diagram.puml
-│   ├── class_diagram.puml
-│   └── sequence_diagram.puml
+│   ├── use_case_diagram.png
+│   ├── class_diagram.png
+│   └── sequence_diagram.png
 ├── docker-compose.yml
 └── README.md
 ```

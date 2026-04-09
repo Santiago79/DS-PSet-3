@@ -53,7 +53,17 @@ class NotificationObserver(ObservadorEvento):
                     user_id=recipient,
                 )
                 command.execute()
-        
+
+#            if recipient:
+#                # Crear y ejecutar el comando usando la factory
+#                command = factory.create_command(
+#                    notification_repo=self.notification_repo,
+#                    evento=evento,
+#                    channel="email",
+#                    recipient=recipient,
+#                )
+#                command.execute()
+
         except Exception as e:
             # Log del error pero no propagar, para evitar fallos en el evento bus
             logging.error(f"Error procesando evento para notificación: {str(e)}")
@@ -68,10 +78,15 @@ class NotificationObserver(ObservadorEvento):
         Returns:
             str: ID del usuario destinatario, o None si no aplica
         """
+#        if isinstance(evento, IncidentCreatedEvent):
+#            # Notificar al creador del incidente
+#            print(f"Este es un log: {evento.incident.created_by}")
+#            return evento.incident.created_by
+        
         if isinstance(evento, IncidentCreatedEvent):
             # Notificar al creador del incidente
             return evento.incident.created_by
-        
+
         elif isinstance(evento, IncidentAssignedEvent):
             # Notificar al usuario asignado
             return evento.assigned_to

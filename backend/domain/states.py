@@ -62,11 +62,14 @@ class OpenState(IncidentState):
     def assign(self, incident: Incident, user_id: str) -> None:
         incident.assigned_to = user_id
         incident._transition_to(IncidentStatus.ASSIGNED)
-    
+
     def start_progress(self, incident: Incident) -> None:
         raise InvalidStateTransitionError(
             "No se puede iniciar progreso: el incidente no está asignado"
         )
+
+#    def start_progress(self, incident: Incident) -> None:
+#       incident._transition_to(IncidentStatus.IN_PROGRESS)
     
     def resolve(self, incident: Incident) -> None:
         raise InvalidStateTransitionError(
