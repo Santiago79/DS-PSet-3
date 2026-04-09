@@ -49,8 +49,8 @@ class NotificationObserver(ObservadorEvento):
                 command = factory.create_command(
                     notification_repo=self.notification_repo,
                     evento=evento,
-                    channel="in_app",
-                    user_id=recipient,
+                    channel="email",
+                    recipient=recipient,
                 )
                 command.execute()
         
@@ -70,6 +70,7 @@ class NotificationObserver(ObservadorEvento):
         """
         if isinstance(evento, IncidentCreatedEvent):
             # Notificar al creador del incidente
+            print(f"Este es un log: {evento.incident.created_by}")
             return evento.incident.created_by
         
         elif isinstance(evento, IncidentAssignedEvent):

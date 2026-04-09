@@ -1,5 +1,7 @@
 from typing import List
 
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+
 from application.use_cases import (
     AssignIncidentUseCase,
     ChangeIncidentStatusUseCase,
@@ -46,17 +48,20 @@ from application.dtos import (
     LoginResponseDTO,
     NotificationResponseDTO,
 )
-
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 router = APIRouter()
 
 @router.post("/login", response_model=LoginResponseDTO, summary="Autenticar usuario")
-def login(body: LoginRequestDTO, db: Session = Depends(get_db)):
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
     """
-    Usa el DTO para recibir email/password y retorna el token.
+    Usa el formulario estándar de OAuth2 para recibir credenciales y retorna el token.
     """
-    user_orm = db.query(UserORM).filter(UserORM.email == body.email).first()
+    user_orm = db.query(UserORM).filter(UserORM.email == form_data.username).first()
     
-    if not user_orm or not AuthProvider.verify_password(body.password, user_orm.hashed_password):
+    if not user_orm or not AuthProvider.verify_password(form_data.password, user_orm.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciales inválidas"

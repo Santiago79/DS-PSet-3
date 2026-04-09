@@ -40,7 +40,11 @@ def _request_json(method: str, path: str, **kwargs) -> Any:
         raise ApiError(f"Error de conexión: {e}")
 
 def login(email, password):
-    res = _request_json("POST", "/login", json={"email": email, "password": password})
+    res = _request_json(
+        "POST", 
+        "/login", 
+        data={"username": email, "password": password}
+    )
     return res["access_token"]
 
 def get_current_user(token):
