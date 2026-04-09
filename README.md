@@ -1,7 +1,7 @@
 # 🛡️ OpsCenter
 
 Plataforma interna de gestión de incidentes operativos para equipos fintech.
-
+Santiago Reátegui  -  María Emilia Cueva  -  Raymond Portilla - Liam Huang
 ---
 
 ## 1. ¿Qué problema resuelve?
